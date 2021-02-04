@@ -1,0 +1,22 @@
+<?php
+// AK: Initialize variable
+$translated = [];
+
+// AK: Get translated forms so that we can get unique values below
+foreach($this->driver->getForms() ?? [] as $form) {
+  $translated[] = $this->transEsc($form);
+}
+
+// AK: Get translated carriers so that we can get unique values below
+foreach($this->driver->getCarriers() ?? [] as $carrier) {
+  $translated[] = $this->transEsc($carrier);
+}
+
+// AK: Get unique values for display
+$badges = array_unique($translated);
+?>
+
+<?php // AK: Use the $badges variable ?>
+<?php foreach ($badges as $format): ?>
+  <span class="format <?=$this->record($this->driver)->getFormatClass($format) ?>"><?=$this->transEsc($format) ?></span>
+<?php endforeach; ?>

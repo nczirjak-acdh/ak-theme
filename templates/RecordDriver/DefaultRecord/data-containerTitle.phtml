@@ -1,0 +1,15 @@
+<?php foreach ($data as $key => $value):
+  $containerSource = $this->driver->getSourceIdentifier();
+?>
+  <?php if ($id = $value['id']): ?>
+    <a href="<?=$this->recordLink()->getUrl("$containerSource|$id")?>">
+      <?=$this->escapeHtml($value['title'])?>
+    </a>
+  <?php else: ?>
+    <?=$this->escapeHtml($value['title'])?>
+  <?php endif; ?>
+  <?php if ($volNo = $value['volNo']): ?>
+    <?=' ('.$this->escapeHtml($volNo).')'?> 
+  <?php endif; ?>
+  <br />
+<?php endforeach; ?>

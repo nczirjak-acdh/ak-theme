@@ -1,0 +1,13 @@
+<?php if (!empty($data)): ?>
+    <?php if (count($data) > 1): ?>
+        <ul>
+            <?php foreach ($data as $entry): ?>
+                <li><?=$this->escapeHtml($entry)?></li>
+            <?php endforeach; ?>
+        </ul>
+    <?php else: ?>
+        <?php foreach ($data as $entry): ?>
+            <?=$this->escapeHtml($entry)?>
+        <?php endforeach; ?>
+    <?php endif; ?>
+<?php endif; ?>

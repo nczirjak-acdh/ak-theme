@@ -1,0 +1,273 @@
+<?php
+// Check for conference proceeding notes and disseration notes
+$procNotes = $this->driver->tryMethod('getMeetingNames');
+$dissNotes = $this->driver->tryMethod('getDissertationNotes');
+
+// Get formats
+$formats = $this->driver->tryMethod('getFormats');
+
+// Initialize format variable
+$format = null;
+
+// Get the format of the current record
+if (in_array('VideoDisc', $formats)) {
+    $format = 'VIDEO';
+} else if (in_array('Cartographic', $formats)) {
+    $format = 'MAP';
+} else if (in_array('CdRom', $formats)) {
+    $format = 'DATA';
+} else if (
+    in_array('BookOnline', $formats) ||
+    in_array('SeriesOnline', $formats) ||
+    in_array('MultiVolumeOnline', $formats)
+    ) {
+    $format = 'EBOOK';
+} else if (!empty($procNotes)) {
+    $format = 'CONF';
+} else if ($dissNotes != null && !empty($dissNotes)) {
+    $format = 'THES';
+} else if (in_array('BookUnmediated', $formats)) {
+    $format = 'BOOK';
+} else if (in_array('SeriesUnmediated', $formats) ||
+    in_array('MultiVolumeUnmediated', $formats)) {
+    $format = 'SER';
+} else if (
+    in_array('JournalUnmediated', $formats) ||
+    in_array('JournalOnline', $formats)
+    ) {
+    $format = 'JFULL';
+} else if (
+    in_array('NewspaperUnmediated', $formats) ||
+    in_array('NewspaperOnline', $formats)
+    ) {
+    $format = 'NEWS';
+} else if (in_array('DependentLiteratureUnmediated', $formats)) {
+    $format = 'JOUR';
+} else if (in_array('DependentLiteratureOnline', $formats)) {
+    // TODO: AK: For chapters and essays, use "ECHAP". Use "EJOUR" only for articles
+    $format = 'EJOUR';
+} else if (
+    in_array('AudioDisc', $formats) ||
+    in_array('AudioCarrier', $formats)
+    ) {
+    $format = 'SOUND';
+} else if (in_array('StillImage', $formats)) {
+    $format = 'FIGURE';
+} else if (in_array('NotatedMusic', $formats)) {
+    $format = 'MUSIC';
+} else {
+    // Fallback value "GEN" for "generic"
+    $format = 'GEN';
+}
+
+// Type
+echo 'TY  - ' . $format . "\r\n";
+
+$title = rtrim($this->driver->getWholeTitle(), " /");
+if (!empty($title)) {
+    echo 'TI  - ' . "$title\r\n";
+}
+// Initialize journal title variable
+$containerTitle = null;
+
+if ($format == 'JOUR' || $format == 'EJOUR' || $format == 'CHAP' ||
+    $format == 'ECHAP') {
+    $containerTitle = $this->driver->tryMethod('getContainerTitle');
+
+    if (empty($title)) {
+        echo 'TI  - ' . "$containerTitle\r\n";
+    } else {
+        echo 'T2  - ' . "$containerTitle\r\n";
+    }
+
+    // Journals only
+    if ($format == 'JOUR' || $format == 'EJOUR') {
+        echo 'JF  - ' . "$containerTitle\r\n";
+        echo 'JO  - ' . "$containerTitle\r\n";
+    }
+    
+    $volume = $this->driver->tryMethod('getContainerVolume');
+    if (!empty($volume)) {
+        echo 'VL  - ' . "$volume\r\n";
+    }
+    $number = $this->driver->tryMethod('getContainerIssue');
+    if (!empty($number)) {
+        echo 'IS  - ' . "$number\r\n";
+    }
+}
+
+if (!$containerTitle) {
+    $series = $this->driver->tryMethod('getSeries');
+    if (is_array($series)) {
+        foreach ($series as $current) {
+            echo 'T3  - ' . (is_array($current) ? $current['name'] : $current) .
+                "\r\n";
+        }
+    }
+}
+
+$author = $this->driver->tryMethod('getPrimaryAuthor') ??
+    $this->driver->tryMethod('getCorporateAuthor') ??
+    null;
+if (!empty($author)) {
+    echo 'A1  - ' . "$author\r\n";
+}
+
+$secondaryAuthors = $this->driver->tryMethod('getSecondaryAuthors') ?:
+$this->driver->tryMethod('getSecondaryCorporateAuthors') ?:
+null;
+if (is_array($secondaryAuthors)) {
+    foreach ($secondaryAuthors as $current) {
+        echo 'A2  - ' . "$current\r\n";
+    }
+}
+
+$pubPlaces = $this->driver->tryMethod('getPlacesOfPublication');
+$pubDates = $this->driver->tryMethod('getPublicationDates');
+$pubNames = $this->driver->tryMethod('getPublishers');
+if (is_array($pubPlaces) && is_array($pubDates) && is_array($pubNames)) {
+    $total = min(count($pubPlaces), count($pubDates), count($pubNames));
+    // if we have pub dates but no other details, we still want to export the year:
+    if ($total == 0 && count($pubDates) > 0) {
+        $total = 1;
+    }
+    for ($i = 0; $i < $total; $i++) {
+        if (isset($pubPlaces[$i])) {
+            echo "CY  - " . rtrim(str_replace(['[', ']'], '', $pubPlaces[$i]), ': ')
+                . "\r\n";
+        }
+        if (isset($pubNames[$i])) {
+            echo "PB  - " . rtrim($pubNames[$i], ", ") . "\r\n";
+        }
+        $date = trim($pubDates[$i], '[]. ');
+        if (strlen($date) > 4) {
+            $date = $this->dateTime()->extractYear($date);
+        }
+        if ($date) {
+            echo 'PY  - ' . "$date\r\n";
+        }
+    }
+}
+
+$languages = $this->driver->tryMethod('getLanguages');
+if (is_array($languages)) {
+    foreach ($languages as $lang) {
+        $langTrans = $this->transEsc($lang);
+        echo 'LA  - ' . "$langTrans\r\n";
+    }
+}
+
+$genres = $this->driver->tryMethod('getGenres');
+if (is_array($genres)) {
+    foreach ($genres as $genre) {
+        $genreTrans = $this->transEsc($genre);
+        echo 'M3  - ' . "$genreTrans\r\n";
+    }
+}
+
+
+$subjects = $this->driver->tryMethod('getAllSubjects');
+if (is_array($subjects)) {
+    foreach ($subjects as $subject) {
+        echo 'KW  - ' . "$subject\r\n";
+    }
+}
+
+
+$start_page = $this->driver->tryMethod('getContainerStartPage');
+if (!empty($start_page)) {
+    echo 'SP  - ' . "$start_page\r\n";
+}
+
+$end_page = $this->driver->tryMethod('getContainerEndPage');
+if (!empty($end_page)) {
+    echo 'EP  - ' . "$end_page\r\n";
+}
+
+$isbns = $this->driver->tryMethod('getISBNs');
+if (is_array($isbns)) {
+    foreach ($isbns as $isbn) {
+        echo 'SN  - ' . "$isbn\r\n";
+    }
+}
+
+$issns = $this->driver->tryMethod('getISSNs');
+if (is_array($issns)) {
+    foreach ($issns as $issn) {
+        echo 'SN  - ' . "$issn\r\n";
+    }
+}
+
+$edition = $this->driver->tryMethod('getEdition');
+if (!empty($edition)) {
+    echo 'ET  - ' . "$edition\r\n";
+}
+
+$notes = $this->driver->tryMethod('getGeneralNotes');
+if (is_array($notes)) {
+    foreach ($notes as $note) {
+        echo 'N1  - ' . "$note\r\n";
+    }
+}
+
+$contentSummaries = $this->driver->tryMethod('getContentSummaries');
+if (is_array($contentSummaries)) {
+	// Get the first available content summary (= abstract)
+	$contentSummary = $contentSummaries[0];
+	echo 'AB  - ' . "$contentSummary\r\n";
+    
+    // Check if we have more than one content summary (= abstract)
+    if (count($contentSummaries) > 1) {
+        // Remove first content summary (= abstract) - as we already added it - and
+        // then add all others
+        unset($contentSummaries[0]);
+        foreach ($contentSummaries as $contentSummary) {
+            echo 'N2  - ' . "$contentSummary\r\n";
+        }
+    }
+}
+
+$callNumber = $this->driver->tryMethod('getCallNumber');
+if (!empty($callNumber)) {
+	echo 'CN  - ' . "$callNumber\r\n";
+}
+
+$urls = $this->driver->tryMethod('getURLs');
+if (!empty($urls)) {
+	foreach ($urls as $urlArray) {
+        $url = $urlArray['url'];
+        
+        /*
+        // These would be the values according to the RIS entry on english Wikipedia.
+        // As Zotero (a very popular citation management software) does not use these
+        // fields, we add all possible URLs as "L1" elements (see below).
+        $desc = $urlArray['desc'];
+        $mime = $urlArray['mime'];
+        if (preg_match('/Volltext|Fulltext/', $desc)) {
+			if (strpos($mime, 'pdf') !== false) {
+				echo 'L1  - ' . "$url\r\n";
+			} else {
+				echo 'L2  - ' . "$url\r\n";
+			}			
+		} else {
+            echo 'UR  - ' . "$url\r\n";
+        }
+        */
+
+        // URLs for Zotero. In Zotero, only one "UR" element is allowed, so all other
+        // URLs would get lost. We export all other URLs as "L1" elements as in
+        // Zotero these are URL attachments.
+        echo 'L1  - ' . "$url\r\n";
+	}
+}
+
+$urlToAKsearchRecord = $this->serverUrl($this->recordLink()->getUrl($this->driver));
+echo 'UR  - ' . "$urlToAKsearchRecord\r\n";
+
+echo 'DB  - ' . "AKsearch\r\n";
+echo 'DP  - ' . "AK Bibliothek Wien für Sozialwissenschaften\r\n";
+
+
+// End of Record:
+echo "ER  -\r\n\r\n";
+?>

@@ -1,0 +1,17 @@
+{
+    "name": "nczirjak-acdh/ak-theme",
+    "description": "VUFind ACDHCH Theme",
+    "type": "vufind-theme",
+    "homepage": "https://github.com/nczirjak-acdh/ak-theme",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Norbert Czirjak",
+            "email": "norbert.czirjak@oeaw.ac.at"
+        }
+    ],
+    "require": {
+    },
+    "require-dev": {        
+    }
+}

@@ -1,0 +1,5 @@
+<?php $searchRoute = $this->searchOptions($this->driver->getSourceIdentifier())->getSearchAction(); ?>
+<?php // AK: Removed double quotes (code %22) from around the subject keywords as we
+      //     don't get search results with them.
+?>
+<?=$this->url($searchRoute)?>?lookfor=<?=urlencode($this->lookfor)?>&amp;type=Subject

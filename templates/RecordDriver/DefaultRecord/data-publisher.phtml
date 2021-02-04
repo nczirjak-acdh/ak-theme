@@ -1,0 +1,35 @@
+<?php if (!empty($data)): ?>
+    <?php foreach ($data as $entries): ?>
+        <?=$this->escapeHtml($entries['data'])?>
+        <br />
+    <?php endforeach; ?>
+<?php endif; ?>
+
+<?php
+// Example of displaying publication details grouped by indicator meanings
+/*
+<?php
+$grouped = [];
+if (!empty($data)) {
+    foreach ($data as $entries) {
+        $ind1 = (empty(trim($entries['ind1']))) ? $this->transEsc('PublisherIndicator::ind1_blank') : $this->transEsc('PublisherIndicator::ind1_'.$entries['ind1']);
+        $ind2 = $this->transEsc('PublisherIndicator::ind2_'.$entries['ind2']);
+        $content = $entries['data'];
+        $grouped[$ind1.' '.$ind2][] = $content;
+    }
+}
+?>
+<?php if (!empty($grouped)): ?>
+    <?php foreach ($grouped as $key => $values): ?>
+        <ul>
+            <li><b><?=$this->escapeHtml($key)?></b></li>
+            <ul>
+                <?php foreach ($values as $value): ?>
+                    <li><?=$this->escapeHtml($value)?></li>
+                <?php endforeach; ?>
+            </ul>
+        </ul>
+    <?php endforeach; ?>
+<?php endif; ?>
+*/
+?>

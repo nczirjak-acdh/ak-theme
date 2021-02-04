@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<user>
+    <record_type></record_type>
+    <first_name></first_name>
+    <last_name></last_name>
+    <gender></gender>
+    <user_group></user_group>
+    <preferred_language></preferred_language>
+    <birth_date></birth_date>
+    <expiry_date></expiry_date>
+    <purge_date></purge_date>
+    <account_type></account_type>
+    <status></status>
+    <contact_info>
+        <addresses>
+            <address preferred="true">
+            <line1></line1>
+            <line2></line2>
+            <city></city>
+            <postal_code></postal_code>
+            <start_date></start_date>
+            <address_types>
+                <address_type></address_type>
+            </address_types>
+            </address>
+        </addresses>
+        <emails>
+            <email preferred="true">
+                <email_address></email_address>
+                <email_types>
+                    <email_type></email_type>
+                </email_types>
+            </email>
+        </emails>
+        <phones>
+            <phone preferred="true">
+                <phone_number></phone_number>
+                <phone_types>
+                    <phone_type></phone_type>
+                </phone_types>
+            </phone>
+        </phones>
+    </contact_info>
+    <user_identifiers>
+        <user_identifier>
+            <id_type></id_type>
+            <value></value>
+        </user_identifier>
+    </user_identifiers>
+</user>

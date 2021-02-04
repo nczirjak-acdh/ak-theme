@@ -1,0 +1,4 @@
+<?php foreach ($data as $localDewey): ?>
+    <a title="<?=$this->escapeHtmlAttr($localDewey)?>" href="<?=$this->record($this->driver)->getLink('classification', $localDewey)?>" rel="nofollow"><?=trim($this->escapeHtml($localDewey))?></a>
+    <br />
+<?php endforeach; ?>

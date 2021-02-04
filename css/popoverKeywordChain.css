@@ -1,0 +1,17 @@
+.popover {
+    max-width: 80%;
+    width: inherit;
+}
+
+.popover-title {
+    font-weight: bold;
+}
+
+.popoverEntry:first-child {
+    margin-top: 5px;
+    margin-bottom: 12px;
+}
+
+.popoverEntry a {
+    margin-left: 8px;
+}

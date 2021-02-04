@@ -1,0 +1,36 @@
+<?php
+  // Set page title.
+  $this->headTitle($this->translate('auto_configure_title'));
+
+  // Set up breadcrumbs:
+  $this->layout()->breadcrumbs = '<li class="active">' . $this->transEsc('auto_configure_title') . '</li>';
+?>
+<h2><?=$this->transEsc('auto_configure_title')?></h2>
+<?=$this->flashmessages()?>
+<?php $errors = 0; foreach ($this->checks as $check): ?>
+  <?php
+  if (!$check['status']) {
+    $errors++;
+    $alertStyle = 'danger';
+    $message = 'test_fail';
+    $buttonText = 'test_fix';
+  } else if ($check['status'] === 'warning') {
+    $errors++;
+    $alertStyle = 'warning';
+    $message = 'test_problems';
+    $buttonText = 'test_fix';
+  } else if ($check['status'] === 'info') {
+    $alertStyle = 'info';
+    $message = 'test_notactive';
+    $buttonText = 'test_activate';
+  } else if ($check['status']) {
+    $alertStyle = 'success';
+  }
+  ?>
+  <div class="alert alert-<?=$alertStyle?>"><?=$this->escapeHtml($check['title'])?>... <?=($check['status'] === true) ? $this->transEsc('test_ok') : $this->transEsc($message) . ' <a class="btn btn-'.$alertStyle.'" href="' . $this->url('install-' . strtolower($check['fix'])) . '">' . $this->transEsc($buttonText) . '</a>' ?></div>
+
+  <?php endforeach; ?>
+
+<?php if ($errors == 0): ?>
+  <p>No problems were found.  You may wish to <a href="<?=$this->url('install-done')?>">Disable Auto Configuration</a> at this time.</p>
+<?php endif; ?>

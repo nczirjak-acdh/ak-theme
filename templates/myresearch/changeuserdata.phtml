@@ -1,0 +1,35 @@
+<?php
+    // Set up page title:
+    $this->headTitle($this->translate('change_userdata'));
+
+    // Set up breadcrumbs:
+    $this->layout()->breadcrumbs = '<li><a href="' . $this->url('myresearch-home') . '">' . $this->transEsc('Your Account') . '</a></li> '
+        . '<li><a href="' . $this->url('myresearch-profile') . '">' . $this->transEsc('Profile') . '</a></li> '
+        . '<li class="active">' . $this->transEsc('change_userdata') . '</li>';
+?>
+
+<?php if ($this->auth()->isLoggedIn()): ?>
+  <div class="<?=$this->layoutClass('mainbody')?>">
+<?php endif; ?>
+
+<h2><?=$this->transEsc('change_userdata')?></h2>
+<?=$this->flashmessages() ?>
+
+<?php if (!$this->auth()->getManager()->supportsUserdataChange($this->auth_method)): ?>
+  <div class="error"><?=$this->transEsc('change_userdata_disabled') ?></div>
+<?php else: ?>
+    <form id="change-user-data" class="form-change-user-data" action="<?=$this->url('myresearch-changeuserdata') ?>" method="post" role="form">
+        <?=$this->auth()->getChangeUserdataForm() ?>
+        <?=$this->recaptcha()->html($this->useRecaptcha) ?>
+        <div class="form-group">
+            <input class="btn btn-primary" name="submit" type="submit" value="<?=$this->transEsc('Submit')?>" />
+        </div>
+    </form>
+<?php endif; ?>
+
+<?php if ($this->auth()->isLoggedIn()): ?>
+  </div>
+  <div class="<?=$this->layoutClass('sidebar')?>">
+    <?=$this->context($this)->renderInContext("myresearch/menu.phtml", ['active' => 'profile'])?>
+  </div>
+<?php endif; ?>

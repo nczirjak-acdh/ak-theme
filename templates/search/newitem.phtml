@@ -1,0 +1,130 @@
+<?php
+    // AK: Convenience variable to check if a datepicker should be used
+    $useDatepicker = !empty($this->datePickerConfig) ?? false;
+
+    // AK: Include bootstrap-datepicker JS and CSS
+    if ($useDatepicker) {
+      $language = $this->datepicker()->getLanguage();      
+      $this->headScript()->appendFile('vendor/bootstrap-datepicker/bootstrap-datepicker.min.js');
+      $this->headScript()->appendFile('vendor/bootstrap-datepicker/locales/bootstrap-datepicker.'.$language.'.min.js');
+      $this->headLink()->appendStylesheet('vendor/bootstrap-datepicker/bootstrap-datepicker3.min.css');
+    }
+
+    // Set up page title:
+    $this->headTitle($this->translate('New Item Search'));
+
+    // Set up breadcrumbs:
+    $this->layout()->breadcrumbs = '<li class="active">' . $this->transEsc('New Items') . '</li>';
+
+    // Convenience variable:
+    $offlineMode = $this->ils()->getOfflineMode();
+?>
+<h2><?=$this->transEsc('Find New Items')?></h2>
+<?php if ($offlineMode == "ils-offline"): ?>
+  <?=$this->render('Helpers/ils-offline.phtml', ['offlineModeMsg' => 'ils_offline_holdings_message'])?>
+<?php endif; ?>
+<form method="get" class="form-search-newitem">
+  <div class="form-group">
+    <label class="control-label"><?=$this->transEsc('Range')?>:</label>
+    <div class="btn-group" data-toggle="buttons">
+      <?php if ($useDatepicker): ?>
+        <?php
+        // AK: Adding a datepicker.
+        //     Default range buttons will be removed if datepicker is in use.
+        ?>
+        <div class="input-daterange input-group" id="datepicker">
+          <input type="text" class="input-sm form-control" id="datePickerFrom" readonly/>
+          <span class="input-group-addon"><?=strtolower($this->transEsc('date_to'))?></span>
+          <input type="text" class="input-sm form-control" id="datePickerTo" readonly/>
+        </div>
+        <input type="hidden" id="datePickerFromHidden" name="range[0]" />
+        <input type="hidden" id="datePickerToHidden" name="range[1]" />
+      <?php else: ?>
+        <?php /* AK: Using default range buttons only when no datepicker is defined */ ?>
+        <?php foreach ($this->ranges as $key => $range): ?>
+          <label class="btn btn-primary<?php if($key == 0): ?> active<?php endif ?>">
+            <input type="radio" name="range" id="newitem_range_<?=$this->escapeHtmlAttr($key)?>" value="<?=$this->escapeHtmlAttr($range)?>"<?=($key == 0) ? ' checked="checked"' : ''?>/>
+            <?=($range == 1) ? $this->transEsc('Yesterday') : $this->transEsc('past_days', ['%%range%%' => $this->escapeHtml($range)])?>
+          </label>
+        <?php endforeach; ?>
+      <?php endif; ?>
+    </div>
+  </div>
+  <?php if (is_array($this->fundList) && !empty($this->fundList)): ?>
+    <div class="form-group">
+      <label class="control-label" for="newitem_department"><?=$this->transEsc('Department')?>:</label>
+      <select id="newitem_department" name="department" size="10" class="form-control">
+      <?php foreach ($this->fundList as $fundId => $fund): ?>
+        <option value="<?=$this->escapeHtmlAttr($fundId)?>"><?=$this->transEsc($fund)?></option>
+      <?php endforeach; ?>
+      </select>
+    </div>
+  <?php endif; ?>
+  
+  <?php /* AK: New Items facets - Begin */ ?>
+  <?php if (!empty($this->facetList)): ?>
+    <fieldset class="solr-facets">
+      <legend><?=$this->transEsc('Limit To')?></legend>
+      <div class="solr-facet-container">
+        <?php foreach ($this->facetList as $field => $list): ?>
+          <div class="solr-newitem-facet">
+            <label for="limit_<?=$this->escapeHtmlAttr(str_replace(' ', '', $field))?>"><?=$this->transEsc($list['label'])?>:</label>
+            <select class="form-control" id="limit_<?=$this->escapeHtmlAttr(str_replace(' ', '', $field))?>" name="filter[]" multiple="multiple" size="10">
+              <?php
+                // Sort the current facet list alphabetically; we'll use this data
+                // along with the foreach below to display facet options in the
+                // correct order.
+                $sorted = [];
+                foreach ($list['list'] as $i => $value) {
+                  if (!empty($value['displayText'])) {
+                    $sorted[$i] = $value['displayText'];
+                  }
+                }
+                natcasesort($sorted);
+              ?>
+              <?php foreach ($sorted as $i => $display): ?>
+                <?php
+                  $value = $list['list'][$i];
+                  $displayEsc = $this->escapeHtml($display);
+                ?>
+                <option value="<?=$this->escapeHtmlAttr(($value['operator'] == 'OR' ? '~' : '') . $field . ':"' . $value['value'] . '"')?>" title="<?=$displayEsc?>"><?=$displayEsc?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        <?php endforeach; ?>
+      </div>
+    </fieldset>
+  <?php endif; ?>
+  <?php /* AK: New Items facets - End */ ?>
+
+  <input class="btn btn-primary" type="submit" name="submit" value="<?=$this->transEsc('Find')?>"/>
+</form>
+
+<?php
+if ($useDatepicker) {
+
+  // AK: Setting variables for JS
+  $dateFormat = $this->datepicker()->getFormat($this->datePickerConfig['displayDateFormatPhp']);
+  $startDate = $this->datePickerConfig['datepickerStartDate'] ?? '';
+  $fromDateFull = $this->datePickerConfig['datepickerFromDateFull'] ?? '';
+  $viewMode = ($this->datePickerConfig['datepickerMode'] === 'months') ? 1 : 0;
+  
+  // AK: Allow setting non-script parameters to the script tag
+  $this->inlineScript()->setAllowArbitraryAttributes(true);
+
+  // AK: Append the given file and set the given attributes to the <script> tag.
+  //     ATTENTION: When the name of the JS file changes, the filename RegEx in
+  //     the JS file needs to be changed too!
+  echo $this->inlineScript()->appendFile(
+    'newItemDatepicker.js',
+    null,
+    [
+      'dateformat' => $dateFormat,
+      'startdate' => $startDate,
+      'fromdatefull' => $fromDateFull,
+      'language' => $language,
+      'viewmode' => $viewMode
+    ]
+  );
+}
+?>

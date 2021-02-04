@@ -1,0 +1,91 @@
+<?php
+// Set up page title:
+$this->headTitle($this->transEsc('scheduledsearch'));
+
+// Set up breadcrumbs:
+$this->layout()->breadcrumbs = '<li><a href="' . $this->url('myresearch-home') . '">' . $this->transEsc('Your Account') . '</a></li>'
+	. '<li class="active">' . $this->transEsc('scheduledsearch') . '</li>';
+?>
+
+<?php if ($this->auth()->isLoggedIn()): ?>
+	<div class="<?=$this->layoutClass('mainbody')?>">
+<?php endif; ?>
+
+	<h2><?=$this->transEsc('scheduledsearch')?></h2>
+	<p>
+		Für neu erworbene bzw. der Suchmaschine "AKsearch" neu hinzugefügte Medien
+		kann ein E-Mail-Alert eingerichtet werden.
+	</p>
+	<p>
+		Dabei wird eine im Vorhinein selbst definierte Suche regelmäßig ausgeführt
+		und geprüft, ob seit dem letzen Alert neue Suchergebnisse hinzugekommen sind.
+		Falls ja, wird eine E-Mail-Nachricht an die im NutzerInnen-Konto hinterlegte
+		E-Mail-Adresse gesendet.<br /><br />
+	</p>
+
+	<h3>Alert einrichten</h3>
+	<p>Um den Alert-Dienst einzurichten, gehen Sie bitte wie folgt vor:</p>
+	<ol>
+		<li>Führen Sie eine Suche aus, die den Suchkriterien entspricht, für die Sie
+			Benachrichtigungen erhalten möchten. Sie können auch eine leere Suche
+			durchführen (also ohne Suchwort im Suchfeld) und die Ergebnisse filtern
+			(z. B. nach Klassifikation oder Schlagwort).<br /><br />
+		</li>
+		<li>
+			Gehen Sie dann auf die
+			<a href="<?=$this->url('search-history')?>?require_login">
+			Seite mit den gespeicherten Suchanfragen</a>.<br /><br />
+		</li>
+		<li>
+			Finden Sie unter <strong>Ihre aktuellen Suchanfragen</strong> die Suche
+			mit den Suchkriterien, für die Sie die Benachrichtigungen erhalten
+			wollen. Achten Sie auf die Spalten <strong>Suche</strong> (hier wird das
+			benutzte Suchwort oder - bei einer leeren Suche - der Text "Irgendetwas
+			(leere Suche)" angegeben) und "Einschränkungen" (hier werden die
+			gewählten Filter angegeben).<br /><br />
+		</li>
+		<li>
+			Wählen Sie unter <strong>Alerthäufigkeit</strong>, wie oft sie über neue
+			Ergebnisse informiert werden wollen. <strong>Achtung:</strong> Es werden
+			nur dann E-Mails versenden, wenn neue Medien für die gewählten
+			Suchkriterien gefunden werden. Auch wenn Sie die Option "Täglich" wählen
+			kann es also sein, dass Sie nicht täglich E-Mails bekommen, da nicht
+			jeden Tag neue Medien hinzukommen, die Ihrer Suche entsprechen.<br />
+			<br />
+		</li>
+		<li>
+			Die Suchanfrage, für die Sie einen Alert eingerichtet haben, erscheint
+			nun automatisch unter <strong>Ihre gespeicherten Suchanfragen</strong>.
+			Nun werden die Alert-E-Mails an die E-Mail-Adresse veschickt, die ganz
+			oben in der blauen Box angegeben wird.<br /><br />
+		</li>
+	</ol>
+
+	<h3>Alert abschalten</h3>
+	<p>Um den Alert-Dienst abzuschalten, gehen Sie bitte wie folgt vor:</p>
+	<ol>
+		<li>
+			Gehen Sie auf die
+			<a href="<?=$this->url('search-history')?>?require_login">
+			Seite mit den gespeicherten Suchanfragen</a>.<br /><br />
+		</li>
+		<li>
+			Finden Sie unter <strong>Ihre gespeicherten Suchanfragen</strong> die
+			Suche mit den Suchkriterien, für die Sie den Alert abschalten wollen.
+			<br /><br />
+		</li>
+		<li>
+			Wählen Sie unter <strong>Alerthäufigkeit</strong> den Eintrag
+			<strong>Nie</strong>.<br /><br />
+		</li>
+		<li>
+			Sie können die gespeicherte Suchanfrage auch löschen.<br /><br />
+		</li>
+	</ol>
+
+<?php if ($this->auth()->isLoggedIn()): ?>
+	</div>
+	<div class="<?=$this->layoutClass('sidebar')?>">
+		<?=$this->context($this)->renderInContext("myresearch/menu.phtml", ['active' => 'scheduledsearch'])?>
+	</div>
+<?php endif; ?>

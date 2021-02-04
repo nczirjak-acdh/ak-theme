@@ -1,0 +1,71 @@
+// AK: Slide facets style
+
+.slideMenu {
+    position: relative;
+    overflow: hidden;
+}
+
+.slideMenuFacets {
+    width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: white;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 250px; // Minimum height for facet container
+}
+
+.slideMenuBack {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    background-color: white;
+}
+
+.slRow {
+    display: inline-flex;
+    width: 100%;
+    border-bottom: 1px solid #ddd;
+    align-content: stretch;
+}
+
+.slRow .facet {
+    width: 85%; // Rest is for .slArrow
+    border-bottom: none;
+}
+
+.activeParent {
+    background-color: rgba(38, 86, 128, 0.3);
+}
+
+.slideMenuFacets .text {
+    // TODO: Decide if we should we show the facets in only one line and use ellipsis or if it should wrap
+    /*
+    overflow: hidden;
+	white-space: nowrap;
+    text-overflow: ellipsis;
+    */
+	padding-right: 4px;
+}
+
+.slArrow {
+    font-family: "FontAwesome";
+    width: 15%; // Rest is for .slRow .facet
+    justify-content: center;
+    display: flex;
+    align-items: center;
+    outline: none !important;
+}
+
+.slArrow:hover {
+    text-decoration: none;
+}
+
+.slInactive, .slInactive:hover {
+    color: gray;
+}
+
+.badge {
+    align-self: center;
+}

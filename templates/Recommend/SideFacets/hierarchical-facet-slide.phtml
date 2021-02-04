@@ -1,0 +1,26 @@
+<?php
+// TODO: Check if setting [Results_Settings]->collapsedFacets in facets.ini works!
+$script = <<<JS
+$(document).ready(function() {
+    // See "slideFacet.js" for function "initSlideFacet"
+    initSlideFacet({
+        'source': '{$this->escapeHtml($this->searchClassId)}',
+        'facetName': '{$this->escapeHtml($this->facet)}',
+        'facetSort': '{$this->escapeHtml($this->sortOptions)}',
+        'facetOperator': '{$this->recommend->getFacetOperator($this->facet)}',
+        'currentPath': '{$this->currentPath()}',
+        'template': 'hierarchical-facet-slide-template.phtml'
+    });
+});
+JS;
+?>
+
+<div id="slideMenu_<?=$this->escapeHtml($this->facet)?>" class="slideMenu">
+    <div id="slideMenu_<?=$this->escapeHtml($this->facet)?>_facets"  class="slideMenuFacets" data-facet-value="0"></div>
+    <div id="slideMenu_<?=$this->escapeHtml($this->facet)?>_back" class="slideMenuBack" data-parent-value="0">
+        <a class="facet narrow-toggle"><span class="text"><?=$this->transEsc('navigate_back')?></span></a>
+    </div>
+</div>
+
+<?php // Add JavaScript to page ?>
+<?=$this->inlineScript(\Zend\View\Helper\HeadScript::SCRIPT, $script, 'SET'); ?>

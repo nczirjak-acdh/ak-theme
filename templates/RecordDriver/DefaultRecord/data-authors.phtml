@@ -1,0 +1,16 @@
+<?php if (!empty($data)): ?>
+  <?php foreach ($data as $entries): ?>
+    <?php foreach ($entries as $authId => $name): ?>
+      <span class="author-data" property="<?=$this->escapeHtml($this->transEsc('CreatorRoles::'.$role))?>">
+        <a href="<?=$this->record($this->driver)->getLink('author', $name)?>">
+          <?=$this->escapeHtml($name)?>
+        </a>
+      </span>
+      <?php
+      // TODO: Add an info button to entity facts by using the authority ID:
+      //var_dump($authId);
+      ?>
+      <br />
+    <?php endforeach; ?>
+  <?php endforeach; ?>
+<?php endif; ?>

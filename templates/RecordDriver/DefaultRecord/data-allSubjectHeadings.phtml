@@ -1,0 +1,65 @@
+<?php
+    // TODO: Check for accessibility (WCAG / ARIA)
+
+    // AK: Add JavaScript translations for use in popover
+    $this->jsTranslations()->addStrings(
+      [
+        'currentTerm' => 'currentTerm',
+        'currentAndPreviousTerms' => 'currentAndPreviousTerms',
+        'searchFor' => 'Search For'
+      ]
+    );
+
+    // AK: Include bootstrap-popover JS and CSS
+    $this->headScript()->appendFile('vendor/bootstrap-popover/bootstrap.popover.min.js');
+    $this->headLink()->appendStylesheet('vendor/bootstrap-popover/bootstrap.popover.min.css');
+    $this->headLink()->appendStylesheet('popoverKeywordChain.css');
+    echo $this->inlineScript()->appendFile('popoverKeywordChain.js');
+
+    // AK: Convenience variable for the keyword separator
+    $keywordSeparator = ' <i class="fa fa-minus akKeywordChainSeparator" aria-hidden="true"></i> ';
+?>
+
+<?php foreach ($data as $keywords): ?>
+  <div class="subject-line" property="keywords">
+    <?php
+    // AK: Create some variables
+    $keywordChain = '';
+    $keywordChainSeparated = '';
+    ?>
+    <?php if(count($keywords) == 1) $keywords = explode('--', $keywords[0]); ?>
+    <?php $i = 0; foreach ($keywords as $keyword): ?>
+      <?php // AK: Add a "minus" character from font-awesome to separate the single keywords in a keyword chain from each other. ?>
+      <?=($i == 0) ? '' : $keywordSeparator?>
+      <?php
+      // AK: Create non-separated keyword chain. The individual keywords are surounded by double-quotes: this is important if the keyword contains spaces.
+      $keywordChain = trim($keywordChain) . ' "' . trim($keyword) . '"';
+      // AK: $keywordChainSeparated is passed to popover JavaScript for showing a nice separated keyword chain
+      $keywordChainSeparated = trim($keywordChainSeparated) . (($i == 0) ? '' : $keywordSeparator) . trim($this->escapeHtml($keyword));
+      ?>
+
+      <?php if ($i == 0) :?>
+        <?php /* AK: The first element of the keyword chain gets a "normal" link as a popover would not make sense (there are no previous keywords if the first one is chosen) */ ?>
+        <a title="<?=$this->escapeHtmlAttr($keywordChain)?>" href="<?=$this->record($this->driver)->getLink('subject', $keywordChain)?>" rel="nofollow"><?=trim($this->escapeHtml($keyword))?></a>
+      <?php else: ?>
+        <?php /* AK: A click on a keyword (except the first one - see above) in the keyword chain opens a popup where the user can choose if he wants to search only for the current term or for the current term AND all previous terms. */ ?>
+        <a
+          tabindex="0"
+          role="button"
+          data-trigger="focus"
+          data-toggle="popover"
+          data-keyword=<?=trim($this->escapeHtmlAttr($this->escapeHtml($keyword)))?>
+          data-keyword-link=<?=$this->escapeHtmlAttr($this->record($this->driver)->getLink('subject', '"' . $keyword . '"'))?>
+          data-keywordchain-separated = <?=$this->escapeHtmlAttr($keywordChainSeparated)?>
+          data-keywordchain-link=<?=$this->escapeHtmlAttr($this->record($this->driver)->getLink('subject', $keywordChain))?>
+          rel="nofollow"
+        ><?=trim($this->escapeHtml($keyword))?></a>
+      <?php endif; ?>
+
+      <?php
+      // AK: Increase the counter so that we know if we are processing the first keyword of the chain or a later one.
+      $i++;
+      ?>
+    <?php endforeach; ?>
+  </div>
+<?php endforeach; ?>

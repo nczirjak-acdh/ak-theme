@@ -1,0 +1,273 @@
+<?php
+// TODO: Make display of "nested" vs. "not-nested" panels less complicated!
+
+$levelCounter = 0;
+$yearvolCounter = 0;
+$issueCounter = 0;
+$pntLevel = $this->tab->getBibliographicLevel();
+$childsGrouped = $this->tab->getChilds();
+?>
+
+<?php if ($childsGrouped != null && isset($childsGrouped['childs'])): ?>
+
+    <br />
+    <?php // Button to close all panels that are not already closed ?>
+    <a class="toolbar-btn" data-toggle="collapse" href=".collapse-all.in" style="float:left;"><?=$this->transEsc('close_all')?></a>
+
+    <?php // Button to collapse all panels that are not already collapsed ?>
+    <a class="toolbar-btn" data-toggle="collapse" data-target=".collapse-all:not(.in)" style="float:right;"><?=$this->transEsc('open_all')?></a>
+
+    <?php // Clearer for button floats above ?>
+    <div style="clear: both;">&nbsp;</div>
+
+    <div class="panel-group partsPanelGroup" id="accordion" role="tablist" aria-multiselectable="false">
+        <?php foreach ($childsGrouped['childs'] as $level => $childs): ?>
+            <?php
+            // Increase level counter. This is for opening the first collapsible
+            // initially and keeping the other ones closed.
+            $levelCounter++;
+
+            // Classes and data values for the first collapsible that should initially be
+            // opened.
+            $levelInClass = ($levelCounter == 1) ? 'in' : '';
+            $levelAriaExpanded = ($levelCounter == 1) ? 'true' : 'false';
+            $levelCollapsedClass = ($levelCounter == 1) ? '' : 'collapsed';
+
+            // Hash the level value because it could contain special characters which
+            // would break functionality. Prefix with "id" as IDs should not start with a
+            // digit.
+            $levelHash = 'id'.md5($level.$levelCounter);
+
+            // Check if we should show a flat table or a nested table (e. g. for journals
+            // with mutliple volumes and/or issues).
+            $showFlatTable = true;
+            if (strpos(strtolower($level), 'part') !== false) {
+                $yearVolData = $this->tab->getFlatChilds($childs, 'vol');
+                $yearVolChilds = $yearVolData['childs'];
+                $totalNoOfChilds = $yearVolData['total_no_of_childs'];
+                $noOfYearVol = count($yearVolChilds);
+                
+                // Show nested table for journals (= levels with 'part' in it) only if
+                // there is a certain amount of years/volumes and if these years/volumes
+                // contain at least a certain amount of articles.
+                $showFlatTable = (($noOfYearVol > 2) && (($totalNoOfChilds/$noOfYearVol) > 2)) ? false : true;            
+            }
+            ?>
+            <div class="panel panel-default levelPanel">
+                <div class="panel-heading <?=$levelCollapsedClass?> levelPanelHeading" role="tab" id="heading<?=$levelHash?>" data-toggle="collapse" data-target="#collapse<?=$levelHash?>" aria-expanded="<?=$levelAriaExpanded?>" aria-controls="collapse<?=$levelHash?>">
+                    <h3 class="panel-title">
+                        <a role="button" class="accordion-toggle"><?=$this->transEsc('includes_child_records_of_type')?> "<?=$this->transEsc($level)?>"</a>
+                    </h3>
+                </div>
+                <div id="collapse<?=$levelHash?>" class="panel-collapse collapse <?=$levelInClass?> collapse-all" role="tabpanel" aria-labelledby="heading<?=$levelHash?>">
+                    <div class="panel-body levelPanelBody">
+                    <?php if ($showFlatTable): ?>
+                        <?php
+                        $flatData = $this->tab->getFlatChilds($childs, 'none');
+                        $flatChilds = $flatData['childs'];
+
+                        // Get some data
+                        $hasYears = empty(array_filter(array_column($flatChilds, 'pubYear'))) ? false : true;
+                        $hasEditions = empty(array_filter(array_column($flatChilds, 'edition'))) ? false : true;
+                        $hasVols = empty(array_filter(array_column($flatChilds, 'volNo'))) ? false : true;
+                        $hasIssues = empty(array_filter(array_column($flatChilds, 'issNo'))) ? false : true;
+                        $hasPgs = empty(array_filter(array_column($flatChilds, 'pgNos'))) ? false : true;
+                        $hasFtUrl = empty(array_filter(array_column($flatChilds, 'fullTextUrl'))) ? false : true;
+                        ?>
+
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th width="<?=($hasFtUrl) ? '65%' : '70%'?>"><?=$this->transEsc('Title')?></th>
+                                    <?php if ($hasYears): ?>
+                                        <th style="white-space: nowrap;"><?=$this->transEsc('year')?></th>
+                                    <?php endif; ?>
+                                    <?php if ($hasEditions): ?>
+                                        <th style="white-space: nowrap;"><?=$this->transEsc('Edition')?></th>
+                                    <?php endif; ?>
+                                    <?php if ($hasVols): ?>
+                                        <th style="white-space: nowrap;"><?=$this->transEsc('volume')?></th>
+                                    <?php endif; ?>
+                                    <?php if ($hasIssues): ?>
+                                        <th style="white-space: nowrap;"><?=$this->transEsc('Issue')?></th>
+                                    <?php endif; ?>
+                                    <?php if ($hasPgs): ?>
+                                        <th style="white-space: nowrap;"><?=$this->transEsc('pages')?></th>
+                                    <?php endif; ?>
+                                    <?php if ($hasFtUrl): ?>
+                                        <th style="white-space: nowrap;"><?=$this->transEsc('link')?></th>
+                                    <?php endif; ?>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            <?php foreach ($flatChilds as $i => $child): ?>
+                                <?php
+                                $depthPadding = (isset($child['depth']) && !empty($child['depth'])) ? ($child['depth']*10) : 10;
+                                ?>
+                                <tr>
+                                    <td style="padding-left: <?=$depthPadding?>px;">
+                                    <?php if ($child['marker'] == 'noindex'): ?>
+                                        <?=$this->transEsc($child['title'])?>
+                                    <?php else: ?>
+                                        <a href="<?=$this->recordLink()->getUrl($child['id'])?>">
+                                            <?=$this->transEsc($child['title'])?>
+                                        </a>
+                                    <?php endif; ?>
+                                    </td>
+                                    <?php if ($hasYears): ?>
+                                        <td>
+                                            <?=$this->escapeHtml($child['pubYear'])?>
+                                        </td>
+                                    <?php endif; ?>
+                                    <?php if ($hasEditions): ?>
+                                        <td>
+                                            <?=$this->escapeHtml($child['edition'])?>
+                                        </td>
+                                    <?php endif; ?>
+                                    <?php if ($hasVols): ?>
+                                        <td>
+                                            <?=$this->escapeHtml($child['volNo'])?>
+                                        </td>
+                                    <?php endif; ?>
+
+                                    <?php if ($hasIssues): ?>
+                                        <td>
+                                            <?=$this->escapeHtml($child['issNo'])?>
+                                        </td>
+                                    <?php endif; ?>
+                                    <?php if ($hasPgs): ?>
+                                        <td>
+                                            <?=$this->escapeHtml($child['pgNos'])?>
+                                        </td>
+                                    <?php endif; ?>
+                                    <?php if ($hasFtUrl): ?>
+                                        <td style="white-space: nowrap;">
+                                            <a href="<?=$this->escapeHtmlAttr($child['fullTextUrl'])?>" target="_blank">
+                                                <i class='fa fa-external-link'></i> <?=$this->transEsc('fulltext')?>
+                                            </a>
+                                        </td>
+                                    <?php endif; ?>
+                                </tr>    
+                            <?php endforeach; ?>
+                            </tbody>
+                        </table>
+
+                    <?php else: ?>
+                        <?php foreach ($childs as $year => $childsOfYear): ?>
+                            <?php foreach ($childsOfYear as $vol => $childsOfVol): ?>
+                                <?php
+                                $yearVol = $this->transEsc($year).(($vol != 'novolno') ? '; '.$this->transEsc('volume').'&nbsp;'.$this->escapeHtml($vol) : '');
+                                $yearvolCounter++;
+                                $yearvolInClass = ($yearvolCounter == 1) ? 'in' : '';
+                                $yearvolAriaExpanded = ($yearvolCounter == 1) ? 'true' : 'false';
+                                $yearvolCollapsedClass = ($yearvolCounter == 1) ? '' : 'collapsed';
+                                $yearvolHash = 'id'.md5($yearVol.$yearvolCounter);
+                                ?>
+                                <div class="panel panel-default yearVolPanel">
+                                    <div class="panel-heading <?=$yearvolCollapsedClass?> yearVolPanelHeading" role="tab" id="headingYearVol<?=$yearvolHash?>" data-toggle="collapse" data-target="#collapse<?=$yearvolHash?>" aria-expanded="<?=$yearvolAriaExpanded?>" aria-controls="collapse<?=$yearvolHash?>">
+                                        <h3 class="panel-title">
+                                            <a role="button" class="accordion-toggle"><?=$yearVol?></a>
+                                        </h3>
+                                    </div>
+                                    <div id="collapse<?=$yearvolHash?>" class="panel-collapse collapse <?=$yearvolInClass?> collapse-all" role="tabpanel" aria-labelledby="heading<?=$yearvolHash?>">
+                                        <div class="panel-body yearVolPanelBody">
+                                            <?php foreach ($childsOfVol as $iss => $childsOfIss): ?>
+                                                <?php
+
+                                                $issue = $this->transEsc('Issue').'&nbsp;'.$this->escapeHtml($iss);
+                                                $issueCounter++;
+                                                $issueInClass = ($issueCounter == 1) ? 'in' : '';
+                                                $issueAriaExpanded = ($issueCounter == 1) ? 'true' : 'false';
+                                                $issueCollapsedClass = ($issueCounter == 1) ? '' : 'collapsed';
+                                                $issueHash = 'id'.md5($issue.$issueCounter);
+
+                                                // Get some data
+                                                $hasEditions = empty(array_filter(array_column($childsOfIss, 'edition'))) ? false : true;
+                                                $hasPgs = empty(array_filter(array_column($childsOfIss, 'pgNos'))) ? false : true;
+                                                $hasFtUrl = empty(array_filter(array_column($childsOfIss, 'fullTextUrl'))) ? false : true;
+                                                ?>
+
+                                                <?php if ($iss != 'noissno'): ?>
+                                                <div class="panel panel-default issuePanel">
+                                                    <div class="panel-heading <?=$issueCollapsedClass?> issuePanelHeading" role="tab" id="headingYearVol<?=$issueHash?>" data-toggle="collapse" data-target="#collapse<?=$issueHash?>" aria-expanded="<?=$issueAriaExpanded?>" aria-controls="collapse<?=$issueHash?>">
+                                                        <h3 class="panel-title">
+                                                            <a role="button" class="accordion-toggle"><?=$issue?></a>
+                                                        </h3>
+                                                    </div>
+                                                    <div id="collapse<?=$issueHash?>" class="panel-collapse collapse <?=$issueInClass?> collapse-all" role="tabpanel" aria-labelledby="heading<?=$issueHash?>">
+                                                        <div class="panel-body issuePanelBody">
+                                                <?php else: ?>
+                                                    <div class="yearVolSpacer">
+                                                <?php endif; ?>            
+                                                            <table class="table">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th width="<?=($hasFtUrl) ? '65%' : '70%'?>"><?=$this->transEsc('Title')?></th>
+                                                                        <?php if ($hasEditions): ?>
+                                                                            <th style="white-space: nowrap;"><?=$this->transEsc('Edition')?></th>
+                                                                        <?php endif; ?>
+                                                                        <?php if ($hasPgs): ?>
+                                                                            <th style="white-space: nowrap;"><?=$this->transEsc('pages')?></th>
+                                                                        <?php endif; ?>
+                                                                        <?php if ($hasFtUrl): ?>
+                                                                            <th style="white-space: nowrap;"><?=$this->transEsc('link')?></th>
+                                                                        <?php endif; ?>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                <?php foreach ($childsOfIss as $i => $child): ?>
+                                                                    <?php
+                                                                    $depthPadding = (isset($child['depth']) && !empty($child['depth'])) ? ($child['depth']*10) : 10;
+                                                                    ?>
+                                                                    <tr>
+                                                                        <td style="padding-left: <?=$depthPadding?>px;">
+                                                                        <?php if ($child['marker'] == 'noindex'): ?>
+                                                                            <?=$this->transEsc($child['title'])?>
+                                                                        <?php else: ?>
+                                                                            <a href="<?=$this->recordLink()->getUrl($child['id'])?>">
+                                                                                <?=$this->transEsc($child['title'])?>
+                                                                            </a>
+                                                                        <?php endif; ?>
+                                                                        </td>
+                                                                        <?php if ($hasEditions): ?>
+                                                                            <td>
+                                                                                <?=$this->escapeHtml($child['edition'])?>
+                                                                            </td>
+                                                                        <?php endif; ?>
+                                                                        <?php if ($hasPgs): ?>
+                                                                            <td>
+                                                                                <?=$this->escapeHtml($child['pgNos'])?>
+                                                                            </td>
+                                                                        <?php endif; ?>
+                                                                        <?php if ($hasFtUrl): ?>
+                                                                            <td style="white-space: nowrap;">
+                                                                                <a href="<?=$this->escapeHtmlAttr($child['fullTextUrl'])?>" target="_blank">
+                                                                                    <i class='fa fa-external-link'></i> <?=$this->transEsc('fulltext')?>
+                                                                                </a>
+                                                                            </td>
+                                                                        <?php endif; ?>
+                                                                    </tr>    
+                                                                <?php endforeach; ?>
+                                                                </tbody>
+                                                            </table>
+
+                                                <?php if ($iss != 'noissno'): ?>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <?php else: ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    </div>
+                                </div>       
+                            <?php endforeach; ?>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+<?php endif; ?>

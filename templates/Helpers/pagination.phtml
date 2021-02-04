@@ -1,0 +1,67 @@
+<?php
+// AK: Fix pagination when the default tab is not set to Holdings. 'recordtab' is passed from
+//     e. g. '[theme]\templates\RecordTab\holdingsils.phtml'
+//     TODO: Add to VuFind master code.
+$baseUrl = ($this->recordtab) ? $this->recordLink()->getTabUrl($this->driver, 'Holdings') : $this->currentPath();
+?>
+
+<?php if ($this->pageCount): ?>
+  <ul class="pagination">
+    <!-- Previous page link -->
+    <li<?php if (isset($this->previous)): ?>>
+      <?php $newParams = $this->params; $newParams['page'] = $this->previous; ?>
+      <a href="<?= $baseUrl . '?' . http_build_query($newParams); ?>">
+        <span aria-hidden="true">&laquo;</span> <?=$this->translate('Prev')?>
+      </a>
+    <?php else: ?>
+       class="disabled"> <span><span aria-hidden="true">&laquo;</span> <?=$this->translate('Prev')?></span>
+    <?php endif; ?>
+    </li>
+
+    <!-- First page link -->
+    <li<?php if (isset($this->first) && $this->first != $this->current): ?>>
+      <?php $newParams = $this->params; $newParams['page'] = $this->first; ?>
+      <a href="<?= $baseUrl . '?' . http_build_query($newParams); ?>">
+        <?=$this->translate('First')?>
+      </a>
+    <?php else: ?>
+       class="disabled"> <span><?=$this->translate('First')?></span>
+    <?php endif; ?>
+    </li>
+
+    <!-- Numbered page links -->
+    <?php foreach ($this->pagesInRange as $page): ?>
+      <li<?php if ($page != $this->current): ?>>
+        <?php $newParams = $this->params; $newParams['page'] = $page; ?>
+        <a href="<?= $baseUrl . '?' . http_build_query($newParams); ?>">
+            <?=$page?>
+        </a>
+      <?php else: ?>
+         class="active"> <span><?=$page?></span>
+      <?php endif; ?>
+      </li>
+    <?php endforeach; ?>
+
+    <!-- Last page link -->
+    <li<?php if (isset($this->last) && $this->last != $this->current): ?>>
+      <?php $newParams = $this->params; $newParams['page'] = $this->last; ?>
+      <a href="<?= $baseUrl . '?' . http_build_query($newParams); ?>">
+        <?=$this->translate('Last')?>
+      </a>
+    <?php else: ?>
+       class="disabled"> <span><?=$this->translate('Last')?></span>
+    <?php endif; ?>
+    </li>
+
+    <!-- Next page link -->
+    <li<?php if (isset($this->next)): ?>>
+      <?php $newParams = $this->params; $newParams['page'] = $this->next; ?>
+      <a href="<?= $baseUrl . '?' . http_build_query($newParams); ?>">
+        <?=$this->translate('Next')?> >
+      </a>
+    <?php else: ?>
+       class="disabled"> <span><?=$this->translate('Next')?> <span aria-hidden="true">&raquo;</span></span>
+    <?php endif; ?>
+    </li>
+  </ul>
+<?php endif; ?>

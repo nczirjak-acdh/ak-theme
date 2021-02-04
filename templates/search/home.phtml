@@ -1,0 +1,27 @@
+<?php
+  // Set page title.
+  $this->headTitle($this->translate('Search Home'));
+
+  // Disable top search box -- this page has a special layout.
+  $this->layout()->searchbox = false;
+
+  // Set default value if necessary:
+  if (!isset($this->searchClassId)) {
+    $this->searchClassId = 'Solr';
+  }
+
+  $this->layout()->breadcrumbs = false;
+?>
+
+<div class="searchHomeContent">
+  <?php // AK: Red background bar for search form - only on start page before first search (for others: see header.phtml)! ?>
+  <div class="akSearchboxBackground">
+    <?php // AK: For keeping margins despite whole-width background bar - only on start page before first search (for others: see header.phtml)! ?>
+    <div class="container">
+      <?=$this->context($this)->renderInContext("search/searchbox.phtml", ['ignoreHiddenFilterMemory' => true])?>
+      <?=$this->inlineScript(\Zend\View\Helper\HeadScript::SCRIPT, '$("#searchForm_lookfor").focus();', 'SET'); ?>
+    </div>
+  </div>
+</div>
+
+<?=implode('', array_map([$this, 'contentBlock'], $blocks ?? []))?>

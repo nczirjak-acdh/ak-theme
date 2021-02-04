@@ -1,0 +1,35 @@
+<?php
+    // Set up page title:
+    $this->headTitle($this->translate('welcome'));
+
+    // Set up breadcrumbs:
+    $this->layout()->breadcrumbs = '<li class="active"><a href="' . $this->url('content-page', ['page' => 'welcome']) . '">' . $this->transEsc('welcome') . '</a></li>';
+?>
+<div class="container">
+    <?php // AK: Heading for welcome page ?>
+    <h2><?=$this->transEsc('welcome_heading')?></h2>
+
+    <?php
+    // AK: See aksearch.less for comments on class "alert-success-copy". It is
+    // important to use the "flash-message" class as this prevents the lightbox to
+    // close automatically which would prevent the welcome message from displaying.
+    // For the responsible JS code see lightbox.js and search for "create account".
+    ?>
+    <div class="flash-message alert alert-success-copy"><?=$this->transEsc('welcome_success')?></div>
+
+    <?php // AK: Main welcome text ?>
+    <?=$this->translate('welcome_text')?>
+
+    <?php
+    // AK: Link to "Account" page. Float it right (pull-right).
+    // "data-lightbox-ignore" makes the link close the lightbox and open the target
+    // on the main page.
+    ?>
+    <a class="btn pull-right" href="<?=$this->url('myresearch-home')?>" data-lightbox-ignore title="<?=$this->transEsc('toAccount')?>"><?=$this->transEsc('toAccount')?></a>
+</div>
+
+<?php
+// AK: Refresh page on closing the welcome page in the lightbox
+$script = 'VuFind.lightbox.refreshOnClose = true;';
+echo $this->inlineScript(\Zend\View\Helper\HeadScript::SCRIPT, $script, 'SET');
+?>

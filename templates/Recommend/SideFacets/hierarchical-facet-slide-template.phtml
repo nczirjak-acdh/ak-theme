@@ -1,0 +1,43 @@
+<?php
+// "$this->facets" comes from method "getAndProcessFacetsHtml" in file
+// "slideFacet.js". See the passed data in "$.post" function there.
+$facets = json_decode($this->facets);
+?>
+
+<?php foreach ($facets as $facet): ?>
+
+    <?php
+    // Check if the current facet is active
+    $toggleUrl = $facet->isApplied ? $facet->exclude : $facet->href;
+
+    // Classes for facet link
+    $classList = ['facet', 'js-facet-item'];
+    if ($facet->isApplied) {
+        $classList[] = 'active';
+    }
+    if ($facet->hasAppliedChildren) {
+        $classList[] = 'activeParent';
+    }
+    if ($facet->operator == 'OR') {
+        $classList[] = 'facetOR';
+    }
+    if ($facet->operator == 'AND') {
+        $classList[] = 'facetAND';
+    }
+    ?>
+
+    <span class="slRow">
+        <a href="<?=$facet->href?>" class="<?=implode(' ', $classList) ?>" title="<?=$facet->displayText?>" data-title="<?=$facet->displayText?>" data-count="<?=$facet->count?>" data-lightbox-ignore>
+            <span class="text">
+                <span class="facet-value"><?=$facet->displayText?></span>
+            </span>
+            <span class="badge"><?=$facet->count?></span>
+        </a>
+        <?php if(!empty($facet->children)): ?>
+            <a data-facet-value="<?=$facet->value?>" class="slArrow">&#xf054;</a>
+        <?php else: ?>
+            <span class="slArrow slInactive">&#xf054;</span>
+        <?php endif; ?>
+    </span>
+
+<?php endforeach; ?>

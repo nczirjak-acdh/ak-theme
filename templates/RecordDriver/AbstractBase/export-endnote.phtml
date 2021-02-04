@@ -1,0 +1,209 @@
+<?php
+// Check for conference proceeding notes and disseration notes
+$procNotes = $this->driver->tryMethod('getMeetingNames');
+$dissNotes = $this->driver->tryMethod('getDissertationNotes');
+
+// A driver-specific template may pass in format overrides; check for these before
+// going to the driver itself:
+$formats = isset($this->overrideFormats) ? $this->overrideFormats :
+    $this->driver->tryMethod('getFormats');
+
+// Initialize format variable
+$format = null;
+
+// Get the format of the current record
+if (is_array($formats) && !empty($formats)) {
+    if (
+        in_array('VideoDisc', $formats) ||
+        in_array('AudioDisc', $formats) ||
+        in_array('AudioCarrier', $formats)
+        ) {
+        $format = 'Audiovisual Material';
+    } else if (in_array('Cartographic', $formats)) {
+        $format = 'Map';
+    } else if (in_array('CdRom', $formats)) {
+        $format = 'Computer Program';
+    } else if (
+        in_array('BookOnline', $formats) ||
+        in_array('SeriesOnline', $formats) ||
+        in_array('MultiVolumeOnline', $formats)
+        ) {
+        $format = 'Electronic Book';
+    } else if (!empty($procNotes)) {
+        $format = 'Conference Proceedings';
+    } else if ($dissNotes != null && !empty($dissNotes)) {
+        $format = 'Thesis';
+    } else if (in_array('BookUnmediated', $formats)) {
+        $format = 'Book';
+    } else if (
+        in_array('SeriesUnmediated', $formats) ||
+        in_array('MultiVolumeUnmediated', $formats) ||
+        in_array('JournalUnmediated', $formats) ||
+        in_array('JournalOnline', $formats) ||
+        in_array('NewspaperUnmediated', $formats) ||
+        in_array('NewspaperOnline', $formats)
+        ) {
+        $format = 'Serial Publication';
+    } else if (in_array('DependentLiteratureUnmediated', $formats)) {
+        // TODO: AK: For chapters and essays, use "Book Section".
+        //           Use "Journal Article" only for articles!
+        $format = 'Journal Article';
+    } else if (in_array('DependentLiteratureOnline', $formats)) {
+        $format = 'Electronic Article';
+    } else if (in_array('StillImage', $formats)) {
+        $format = 'Figure';
+    } else if (in_array('NotatedMusic', $formats)) {
+        $format = 'Music';
+    } else {
+        // Fallback value "GEN" for "generic"
+        $format = 'Generic';
+    }
+} else {
+    // Assume book if no format found (otherwise data may be considered invalid):
+    $format = 'Book';
+}
+
+// Type
+echo "%0 $format\n";
+
+$author = $this->driver->tryMethod('getPrimaryAuthor') ??
+    $this->driver->tryMethod('getCorporateAuthor') ??
+    null;
+if (!empty($author)) {
+    echo "%A $author\n";
+}
+
+$secondaryAuthors = $this->driver->tryMethod('getSecondaryAuthors') ?:
+    $this->driver->tryMethod('getSecondaryCorporateAuthors') ?:
+    null;
+if (is_array($secondaryAuthors)) {
+    foreach ($secondaryAuthors as $current) {
+        echo "%E $current\n";
+    }
+}
+
+$pubPlaces = $this->driver->tryMethod('getPlacesOfPublication');
+$pubDates = $this->driver->tryMethod('getPublicationDates');
+$pubNames = $this->driver->tryMethod('getPublishers');
+if (is_array($pubPlaces) && is_array($pubDates) && is_array($pubNames)) {
+    $total = min(count($pubPlaces), count($pubDates), count($pubNames));
+    // if we have pub dates but no other details, we still want to export the year:
+    if ($total == 0 && count($pubDates) > 0) {
+        $total = 1;
+    }
+    for ($i = 0; $i < $total; $i++) {
+        if (isset($pubNames[$i])) {
+            echo "%I " . rtrim($pubNames[$i], ", ") . "\n";
+        }
+        $date = trim($pubDates[$i], '[]. ');
+        if (strlen($date) > 4) {
+            $date = $this->dateTime()->extractYear($date);
+        }
+        if ($date) {
+            echo "%D $date\n";
+        }
+        if (isset($pubPlaces[$i])) {
+            echo "%C " . rtrim(str_replace(['[', ']'], '', $pubPlaces[$i]), ': ') .
+                "\n";
+        }
+    }
+}
+
+$edition = $this->driver->tryMethod('getEdition');
+if (!empty($edition)) {
+    echo "%7 $edition\n";
+}
+
+$languages = $this->driver->tryMethod('getLanguages');
+if (is_array($languages)) {
+    foreach ($languages as $lang) {
+        echo "%G $lang\n";
+    }
+}
+
+$series = $this->driver->tryMethod('getSeries');
+if (is_array($series)) {
+    foreach ($series as $current) {
+        echo '%B ' . (is_array($current) ? $current['name'] : $current) . "\n";
+    }
+}
+
+$isbns = $this->driver->tryMethod('getISBNs');
+if (is_array($isbns)) {
+    foreach ($isbns as $isbn) {
+        echo "%@ $isbn\n";
+    }
+}
+
+$issns = $this->driver->tryMethod('getISSNs');
+if (is_array($issns)) {
+    foreach ($issns as $issn) {
+        echo "%@ $issn\n";
+    }
+}
+
+$title = rtrim($this->driver->getWholeTitle(), " /");
+echo "%T $title\n";
+
+if (
+    in_array('DependentLiteratureUnmediated', $formats) ||
+    in_array('DependentLiteratureOnline', $formats)
+    ) {
+    $journalTitle = $this->driver->tryMethod('getContainerTitle');
+    if (!empty($journalTitle)) {
+        echo "%J $journalTitle\n";
+        $volume = $this->driver->tryMethod('getContainerVolume');
+        if (!empty($volume)) {
+            echo "%V $volume\n";
+        }
+        $number = $this->driver->tryMethod('getContainerIssue');
+        if (!empty($number)) {
+            echo "%N $number\n";
+        }
+        $page = $this->driver->tryMethod('getContainerStartPage');
+        if (!empty($page)) {
+            $end = $this->driver->tryMethod('getContainerEndPage');
+            if (!empty($end) && $end != $page) {
+                $page .= '-' . $end;
+            }
+            echo "%P $page\n";
+        }
+    }
+}
+
+$subjects = $this->driver->tryMethod('getAllSubjects');
+if (is_array($subjects)) {
+    foreach ($subjects as $subject) {
+        echo "%K $subject\n";
+    }
+}
+
+foreach ($this->record($this->driver)->getUrlList() as $url) {
+    echo "%U $url\n";
+}
+$urlToAKsearchRecord = $this->serverUrl($this->recordLink()->getUrl($this->driver));
+echo "%U $urlToAKsearchRecord\n";
+
+$callNumber = $this->driver->tryMethod('getCallNumber');
+if (!empty($callNumber)) {
+    echo "%L $callNumber\n";
+}
+
+$contentSummaries = $this->driver->tryMethod('getContentSummaries');
+if (!empty($contentSummaries)) {
+    echo "%X {$contentSummaries[0]}\n";
+}
+
+$notes = $this->driver->tryMethod('getGeneralNotes');
+if (is_array($notes)) {
+    foreach ($notes as $note) {
+        echo "%Z $note\n";
+    }
+}
+
+echo "%W AK Bibliothek Wien für Sozialwissenschaften\n";
+echo "%~ AKsearch\n";
+
+// Record separator:
+echo "\n";
+?>

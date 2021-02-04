@@ -1,0 +1,536 @@
+// Include less base from bootstrap theme (= parent theme)
+@import "bootstrap";
+
+// Global variables (see theme "bootstrap3", file "less/vendor/bootstrap/variables.less")
+//@link-color:             #1079a5;
+@link-color:             #0f78a4;
+@font-family-sans-serif: "Open Sans", sans-serif;
+@font-size-base:          13px;
+
+// Custom variables
+@font-size-larger:        ceil((@font-size-base * 1.2));
+
+.navbar-brand {
+    height: auto; // Making space for Acdhch Logo
+    padding-left: 0; // Align Acdch Logo with Search field
+}
+
+.akSearchboxBackground {
+    background: none repeat scroll 0 0 #be0021; // Background color
+    padding: 8px 0 8px 0; // Padding top and bottom of red bar
+    width: 100vw; // 100% viewport width - span bar on whole site width
+    
+    // Fix left margin:
+    margin-left: -50vw;
+    left: 50%;
+    position: relative;
+
+    // Fix left margin in one line - maybe not supported by all Browsers
+    // margin-left: calc(~"50% - 50vw");
+}
+
+#searchForm {
+    width: 100%; // Stretching the whole form with the searchbox in the red bar
+}
+
+// Remove dotted line around link on AKsearch logo
+.navbar-brand, .navbar-brand:focus, .navbar-brand:active {
+    outline: none;
+}
+
+// Adding a gray background bar that spans over the whole site to the breadcrumbs
+.breadcrumbs {
+    background-color: #f5f5f5;
+}
+
+// Padding within the breadcrumb bar
+.breadcrumb {
+    padding: 0px 15px 0px 0px;
+}
+
+// Removing the space between the red search bar and the gray breadcrumb bar
+header .search.container.navbar {
+    min-height: 0;
+    border: none;
+}
+
+// Adding a space between the breadcrumb bar and the main content of the page for better styling.
+// See div in layout.phtml
+.akBreadcrumbSpacer {
+    margin-bottom: 15px;
+}
+
+// Styling searchbox and dropdown next to searchbox
+.akSearchboxBackground #searchForm_lookfor,
+.akSearchboxBackground #searchForm_type {
+    background: none repeat scroll 0 0 #fff;
+    border: 0 none;
+    color: #666666;
+    font-size: 1.2em;
+    //height: 24px;
+    //line-height: 25px;
+    height: 32px;
+    line-height: 34px;
+    margin: 1px 0 0 0;
+    padding-top: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+    padding-left: 8px;
+    border-radius: 0px;
+}
+
+// Make search button (magnifying glass button) bigger
+.akSearchboxBackground .btn-primary {
+    font-size: 1.8em;
+    height: 32px;
+    width: 32px;
+    line-height: 32px;
+    margin-left: 10px;
+}
+
+// Add some space between search button (magnifying glass button) and link to "Extended"
+.akSearchboxBackground .btn-link {
+    margin-left: 10px;
+}
+
+// General button style
+.btn, .reset-filters-btn {
+	margin-bottom: 0;
+	font-weight: normal;
+	text-align: center;
+	vertical-align: middle;
+	cursor: pointer;
+	background-image: none;
+	white-space: nowrap;
+	font-size: 14px;
+	border-radius: 0px;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	border: 0px solid transparent;
+	height: 24px;
+	line-height: 25px;
+	margin: 1px 0 0;
+	padding: 0px 6px 6px 6px;
+}
+
+// Base layout for gray/red buttons
+.btn:not(.btn-link), .reset-filters-btn {
+	font-weight: bold;
+	color: #fff;
+	background-color: #333;
+	border-color: #e0e0e0;
+}
+
+// Hover, focus and active layout for gray/red buttons
+.btn:not(.btn-link):hover, .btn:not(.btn-link):focus, .btn:not(.btn-link):active {
+	background-color: #be0021;
+	border-color: #333;
+	color: #fff;
+	outline: none;
+}
+
+// "Reset filter" button in the search bar. The dark-gray background color
+// of our buttons is used (see general .btn style above). This is the hover,
+// focuse and acitve style. No visible changes will be seen on this actions.
+.reset-filters-btn:hover, .reset-filters-btn:active, .reset-filters-btn:focus {
+    background-color: #333;
+    color: #fff;
+    text-decoration: none;
+    outline: none;
+}
+
+// "Active filter" indicators in search bar. We use the dark-gray background color
+// of our buttons for them.
+.active-filters .filters .filter-value {
+	background: #333;
+}
+
+// Style for the "remove" X for "active filter" indicators in the search bar
+// This has the effect that there is no visible change on hover, focus and active.
+.active-filters .search-filter-remove:hover,
+.active-filters .search-filter-remove:focus,
+.active-filters .search-filter-remove:active {
+    color: #fff;
+    text-decoration: none;
+    outline: none;
+}
+
+// White texts in search bar
+.searchForm .btn-link,
+.active-filters .filters .filters-term,
+.active-filters .filters .filters-title,
+.adv_search_links, .adv_search_links a {
+    color: #fff;
+    font-weight: 600;
+}
+.adv_search_terms {
+    color: #fff;
+}
+
+// X button on advanced search form that displays after having added a new search
+// field.
+.adv-search .adv-term-remove:hover {
+    text-decoration: none;
+    color: #333;
+    opacity: .8;
+}
+
+// Style for handlers in slider for publication year filter
+.slider-container .slider-handle {
+	background: #333;
+	border: 1px solid #333;
+}
+.slider-container .slider-handle:hover,
+.slider-container .slider-handle:active,
+.slider-container .slider-handle:focus {
+	background: #be0021;
+	border-color: #333;
+}
+
+// A spacer between the title (including parent title) and the rest of the data in the results list
+.spacer {
+    margin-bottom: 8px;
+}
+
+// Bigger title in results list
+.media-body .title {
+    font-weight: normal;
+    font-size: @font-size-larger;
+}
+
+// Set color for star at "Add favourite" to gray
+.result-links .fa-star::before {
+	color: #333;
+}
+
+// TODO: Here are some tests concerning shortening long lines in the results list with ellipsis. See file "result-list.phtml".
+// The problem is that the parent div has "display: table-cell". Long lines within that parent keep it growing so that the
+// ellipsis is not shown. Maybe we could use flexbox, but we have to test it in IE11.
+/*
+.ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+}
+.media-left, .media-right, .media-body {
+	display: block;
+}
+.record .media-left, .result .media-left, .record .media-right, .result .media-right {
+	max-width: 10%;
+	float: left;
+}
+.record .media-left, .result .media-left {
+	margin-right: 1%;
+}
+.media-left, .media > .pull-left {
+	padding-right: 1%;
+}
+.media-body {
+    width: 88%;
+	max-width: 88% !important;
+}
+.result-body {
+	float: left;
+	width: 80%;
+}
+.result-links {
+	float: left;
+	width: 20%;
+	padding: 0;
+	text-align: right;
+}
+*/
+
+// Add "!important" to this class because otherwise a "display" declaration of another
+// rule could overwrite it which would have the effect that things would be displayed
+// even if they are not in a lightbox.
+/*
+.lightbox-only {
+    display: none !important;
+}
+*/
+
+// A copy of the .alert-success rules. This is because the lightbox code of VuFind
+// stops displaying any text except the text in a box with the class .alert-success.
+// If we want to display other text additionaly to a .alert-success box, we need to
+// create our own .alert-success class (we just copy it). See also this page:
+// https://vufind.org/wiki/development:architecture:lightbox#a_success_message_is_reached
+.alert-success-copy {
+    color: #2d4821;
+    background-color: #dff0d8;
+    border-color: #d6e9c6;
+}
+
+// Makes table content in record detail view align left. This gives us more
+// space for displaying the information of a record.
+.core-details .table {
+    table-layout: auto;
+}
+
+// A margin for the "holdings ILS" tab in the record detail view.
+.holdings {
+    margin-bottom: 35px;
+}
+
+// This gives us a better table layout in the "holdings ILS" tab in the record
+// detail view.
+.holdings .table {
+    table-layout: fixed;
+}
+
+// Padding of the first column of the tables in the "holdings ILS" tab of the
+// record detail view. This gives some indentation so that it is clear the the
+// table content is subordinated in relation to the heading.
+// Same padding applies to the content of the "Online" holdings.
+.holdings .table th:first-child, .holdings .table td:first-child, .padding-online-content {
+    padding-left: 15px;
+}
+
+// Bold font for the headings of the tables in the "holdings ILS" tab
+.holdings h3 {
+    font-weight: bold;
+}
+
+// Bottom margin for for the headings of the tables in the "holdings ILS" tab,
+// but not for all of them (not .urls and .noHoldings) as for them, it would
+// disturb the layout.
+.holdings:not(.urls):not(.noHoldings) h3 {
+    margin-bottom: 20px;
+}
+
+// Padding and font size for h4 (location names) in the "holdings ILS" tab, but
+// not if there are no holdings.
+.holdings:not(.noHoldings) h4 {
+    padding-left: 15px;
+    font-size: 17px;
+}
+
+// Padding for item notes in the tables of the "holdings ILS" tab
+.item-notes ul {
+	padding-left: 1rem;
+}
+
+// Styling search button
+#searchForm .btn-primary {
+    background-color: white;
+    text-decoration: none;
+    color: #333;
+}
+
+// Styling link to advanced search form
+#searchForm .btn-link {
+	background-color: none;
+	color: #fff;
+	outline: none;
+}
+
+// Stretching facet select boxes on new items search page and adding some space
+// below them for better layout
+.solr-newitem-facet select {
+    max-width: 90%;
+    margin-bottom: 20px;
+}
+
+// Smaller font size and some spacing for heading of facet select boxes on new
+// items search page
+.form-search-newitem legend {
+    font-size: 18px;
+    margin-top: 15px;
+}
+
+// Adjusting the width of the date range field on the new items search page
+.input-daterange {
+    width: auto !important;
+}
+
+// Bigger font for datepicker on the new items search page
+#datepicker .input-sm {
+    font-size: 14px;
+}
+
+// Set the bg color of the readonly text fields of the datepicker to white so that
+// the user is not discuraged to click in it.
+#datepicker .form-control[disabled], #datepicker .form-control[readonly], #birthdayDatePicker {
+    background-color: white;
+}
+
+// Matomo Opt-Out iFrame on privacy page
+#matomoOptOut {
+    border: grey thin solid;
+    color: #333;
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size: 14px;
+    height: 200px;
+    width: 100%;
+}
+
+// Remove red border from (Firefox) input fields when user first opens the
+// "create new user" form. Having almost all fields with red borders when
+// merely opening the form is quite disturbing for users.
+#almaUserRegistration input:required {
+    box-shadow: none !important;
+}
+
+// Remove margin from error messages of mandatory form fields in the "create
+// new user" form.
+#almaUserRegistration .form-group ul {
+    margin-left: 0px !important;
+}
+
+// Set color for the password hint in the "create new user" form, but not the
+// color of the error-texts.
+#almaUserRegistration .help-block:not(.with-errors) {
+    color: #333;
+}
+
+// Remove margin of the password hint in the "create new user" form.
+#almaUserRegistration .help-block.with-errors {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    padding-top: 0;
+}
+
+// Styling of file info text for sending the residential registration card
+// on the "create new user" form
+.fileInfoText {
+    margin-top: 10px;
+}
+
+// Adjust the separator between the single elements of a keyword chain
+// (= Schlagwortkette)
+.akKeywordChainSeparator {
+    font-size: 90%;
+}
+
+// Separate the single lines of keyword chains so that they are clearly
+// distinguishable from each other. But: don't add a space after the last
+// line as this is not necessary.
+.subject-line:not(:last-child) {
+    margin-bottom: 18px;
+}
+
+// Less padding for unordered lists (ul) in the details view core table
+// and the description tab of the details view.
+.core-details ul, .description-tab ul {
+    margin: 0;
+    padding-left: (@table-cell-padding+6px);
+}
+
+// Adding "open" and "close" arrows to the collapsible panels in the
+// "child records" tab of the record detail view. They change their direction
+// if the panel is closed or opened.
+.panel-heading .accordion-toggle:after {
+    font-family: "FontAwesome";
+    content: "\f077";
+    float: right;
+    color: #555;
+}
+.panel-heading.collapsed .accordion-toggle:after {
+    content: "\f078";
+}
+
+// Reset padding for some collapsible panels
+.panel-body {
+    padding: 0;
+}
+
+// Fix borders in collapsible child panels
+.yearVolPanel {
+    border: none;
+    border-bottom: #ddd 1px solid;
+    box-shadow: none;
+    -webkit-box-shadow: none;
+}
+// Padding for table with child data in panels
+.partsPanelGroup th {
+    padding-left: 10px !important;
+}
+
+// White background for year/volume and issue panel heading
+.yearVolPanelHeading, .issuePanelHeading {
+    background-color: #fff !important;
+}
+
+// Margin for year/volume panel without a nested issue panel
+:not(.yearVolPanelBody:has(div.issuePanel)) {
+    margin-left: 18px;
+}
+
+// No borders and some margins for issue panels
+.issuePanel {
+    border: none;
+    box-shadow: none;
+    -webkit-box-shadow: none;
+    margin-top: 5px;
+    margin-left: 10px;
+}
+
+// No border for last issue panel
+.issuePanel:not(:last-child) {
+    border-bottom: #ddd 1px solid;
+}
+
+// Some margins on panels
+.issuePanelBody, .yearVolSpacer {
+    margin-left: 18px;
+}
+
+// Smaller facet boxes on "advanced search" page for placing 5 containers side by side
+.solr-adv-facet {
+	flex: 1 20%;
+}
+
+// Put search button to the right and "clear fields" button to the left on "advanced search" page
+.adv-submit input[type="button"] {
+    float: left;
+}
+.adv-submit input[type="submit"] {
+    float: right;
+}
+
+// Change colors in cookie consent dialog for better contrast (WAI-WCAG)
+.klaro .cookie-modal a, .klaro .cookie-notice a {
+    color: #15A8E6 !important;
+}
+.klaro .cookie-modal .cm-modal .cm-body ul.cm-apps li.cm-app p.purposes {
+    color: #eee !important;
+}
+.klaro .cookie-modal .cm-btn.cm-btn-info, .klaro .cookie-notice .cm-btn.cm-btn-info {
+    background-color: #0f78a4 !important;
+    color: #fff !important;
+}
+
+
+// Style for other screen sizes
+@media (min-width:768px) {
+    .container {
+        width: 85%; // Overall width
+        
+    }
+
+    .akSearchboxBackground #searchForm_lookfor {
+        width: 40%; // Stretching the searchbox
+    }
+
+    // Wrapper for facet boxes on the new items search page 
+    .solr-newitem-facet {
+        flex: 1 25%;
+    }
+
+}
+
+@media (min-width:992px) {
+    .container {
+        width: 85%; // Overall width
+    }
+}
+
+@media (min-width:1200px) {
+    .container {
+        width: 85%; // Overall width
+    }
+}
+

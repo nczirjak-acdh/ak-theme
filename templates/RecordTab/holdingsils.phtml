@@ -1,0 +1,445 @@
+<?php
+    // AK: Use custom "checkRequestIsValid" function as we use another button layout
+    // with out the fontawesome "flag" icon.
+    $this->headScript()->appendFile("checkRequestIsValid.js");
+
+    // Set up convenience variables:
+    $account = $this->auth()->getManager();
+    $user = $account->isLoggedIn();
+    $openUrl = $this->openUrl($this->driver, 'holdings');
+    $openUrlActive = $openUrl->isActive();
+    $doi = $this->doi($this->driver, 'holdings');
+    $doiActive = $doi->isActive();
+    // Account for replace_other_urls setting
+    $urls = $this->record($this->driver)->getLinkDetails($openUrlActive);
+    $offlineMode = $this->ils()->getOfflineMode();
+    
+    try {
+        // TODO: AK: What about the setting holdings_text_fields in config.ini? Does 
+        // or should that have an effect on our customizations here, mainly on the
+        // table that displays the holdings further down?
+        $holdings = $this->driver->getRealTimeHoldings();
+    } catch (\VuFind\Exception\ILS $e) {
+        $holdings = [
+          'holdings' => [],
+          // AK: Adding summarized holdings
+          'summarizedHoldings' => [],
+          'electronic_holdings' => [],
+          'total' => 0,
+          'page' => 0,
+          'itemLimit' => 0
+        ];
+        $offlineMode = 'ils-offline';
+    }
+
+    // AK: Check for account blocks
+    $blocks = false;
+    if (!empty($holdings['blocks'])) {
+      $blocks = true;
+    }
+
+    // AK: Get (and in consequence show) summarized holdings only if we are on first page
+    if (!isset($holdings['page']) || $holdings['page'] <= 1) {
+      $holdings['summarizedHoldings'] = $this->tab->getSummarizedHoldings();
+    }
+
+    // Set page title.
+    $this->headTitle($this->translate('Holdings') . ': ' . $this->driver->getBreadcrumb());
+?>
+
+<?=$this->context($this)->renderInContext('librarycards/selectcard.phtml', ['user' => $this->auth()->isLoggedIn()]); ?>
+
+<?php if ($blocks):?>
+  <div id="account-block-msg" class="alert alert-danger">
+    <?=$this->transEsc('account_block_options_missing', ['%%details%%' => implode('; ', $holdings['blocks'])]) ?>
+  </div>
+<?php endif; ?>
+
+<?php // Show info text if ILS is offline ?>
+<?=($offlineMode == "ils-offline") ? $this->render('Helpers/ils-offline.phtml', ['offlineModeMsg' => 'ils_offline_holdings_message']) : ''?>
+
+<?php // Show URLs ?>
+<?php if (!empty($urls) || $openUrlActive || $doiActive): ?>
+  <div class='holdings urls'>
+    <h3><?=$this->transEsc("Internet")?></h3>
+
+    <div class="padding-online-content">
+      <?php // AK: Display access note ?>
+      <?php if (!empty($accessNotes = $this->driver->getAccessNotes())): ?>
+        <?=$this->transEsc('access_note')?>:
+        <?=$this->escapeHtml(implode('; ', $accessNotes))?>
+        <br /><br />
+      <?php endif; ?>
+
+      <?php if (!empty($urls)): ?>
+        <?php foreach ($urls as $current): ?>
+          <a href="<?=$this->escapeHtmlAttr($this->proxyUrl($current['url']))?>"><?=$this->escapeHtml($current['desc'])?></a><br/>
+        <?php endforeach; ?>
+      <?php endif; ?>
+      <?php if ($openUrlActive): ?><?=$openUrl->renderTemplate()?><?php endif; ?>
+      <?php if ($doiActive): ?><?=$doi->renderTemplate()?><?php endif; ?>
+    </div>
+  </div>
+<?php endif; ?>
+
+<?php // Show electronic holdings ?>
+<?php if (!empty($holdings['electronic_holdings'])): ?>
+  <?=$this->context($this)->renderInContext(
+      'RecordTab/holdingsils/electronic.phtml',
+      ['holdings' => $holdings['electronic_holdings']]
+  );?>
+<?php endif; ?>
+
+<?php // AK: Show summarized holdings ?>
+<?php if (isset($holdings['summarizedHoldings']) && $holdings['summarizedHoldings']): ?>
+  <div class='holdings'>
+    <h3><?=$this->transEsc('summarizedHoldings')?></h3>
+    <?php foreach ($holdings['summarizedHoldings'] ?? [] as $sumHolsOfLocation): ?>
+      <?php $locationName = $this->transEsc('location_' . $sumHolsOfLocation['location_external_name'], [], $sumHolsOfLocation['location_external_name']); ?>
+      <h4><?=$locationName?></h4>
+      <table class="table">
+      <?php
+        // AK: Get the holings data from the array
+        $sumHoldingData = $sumHolsOfLocation['holdings'];
+
+        // AK: Get string data
+        $callNos = implode(', ', array_filter(array_column($sumHoldingData, 'callnumber')));
+        $holdingsAvailable = implode(', ', array_filter(array_column($sumHoldingData, 'holdings_available')));
+        $holdingsPrefix = implode(', ', array_filter(array_column($sumHoldingData, 'holdings_prefix')));
+
+        // AK: Get subarray data
+        $gaps = [];
+        $callnumberNotes = [];
+        $holdingsNotes = [];
+        foreach ($sumHoldingData as $holData) {
+          if ($data = $holData['gaps']) {
+            foreach ($data as $gap) {
+              $gaps[] = $gap;
+            }
+          }
+          if ($data = $holData['callnumber_notes']) {
+            foreach ($data as $callnumberNote) {
+              $callnumberNotes[] = $callnumberNote;
+            }
+          }
+          if ($data = $holData['holdings_notes']) {
+            foreach ($data as $holdingsNote) {
+              $holdingsNotes[] = $holdingsNote;
+            }
+          }
+        }
+
+        // AK: Transform subarray data to string
+        $gaps = implode(', ', array_filter($gaps));
+        $callnumberNotes = implode(', ', array_filter($callnumberNotes));
+        $holdingsNotes = implode(', ', array_filter($holdingsNotes));
+      ?>
+        <tr>
+          <?php if (!empty($holdingsAvailable)): ?>
+            <th><?=$this->transEsc('availableHoldings')?></th>
+            <td><?=!empty($holdingsPrefix) ? rtrim($holdingsPrefix, ':').': ' : ''?><?=$this->escapeHtml($holdingsAvailable)?></td>
+          <?php endif; ?>
+        </tr>
+        <tr>
+          <?php if (!empty($callNos)): ?>
+            <th><?=$this->transEsc('Call Number')?></th>
+            <td><?=$this->escapeHtml($callNos)?></td>
+          <?php endif; ?>
+        </tr>
+        <tr>
+          <?php if (!empty($callnumberNotes)): ?>
+            <th><?=$this->transEsc('callNoNotes')?></th>
+            <td><?=$this->escapeHtml($callnumberNotes)?></td>
+          <?php endif; ?>
+        </tr>
+        <tr>
+          <?php if (!empty($gaps)): ?>
+            <th><?=$this->transEsc('gaps')?></th>
+            <td><?=$this->escapeHtml($gaps)?></td>
+          <?php endif; ?>
+        </tr>
+        <tr>
+          <?php if (!empty($holdingsNotes)): ?>
+            <th><?=$this->transEsc('Holdings_notes')?></th>
+            <td><?=$this->escapeHtml($holdingsNotes)?></td>
+          <?php endif; ?>
+        </tr>
+      </table>
+    <?php endforeach; ?>
+  </div>
+<?php endif; ?>
+
+<?php // ILS holdings ?>
+<?php if (isset($holdings['holdings']) && $holdings['holdings']): ?>
+  <?php
+  // AK: Some translations
+  $checkHold = $this->transEsc("Check Hold");
+  $placeAHold = $this->transEsc("Place a Hold");
+  $recallThis = $this->transEsc("Recall This");
+
+  // AK: Create login button. There is no need to render it for each single item. We just use this "copy".
+  $loginBtn = '<a href="'.$this->recordLink()->getTabUrl($this->driver, 'Holdings', ['login' => 'true', 'catalogLogin' => 'true']).'" data-lightbox class="btn holIlsBtn" title="'.$this->transEsc('Login').'">'.$this->transEsc("Login").'</a>';
+  
+  // AK: If we use title level holds, call some functions that are necessary for rendering the button.
+  // There is no need to call them for each single item. We just use these "copies".
+  $useTitleLevelHol = false;
+  if (!empty($holdingTitleHold = $this->driver->tryMethod('getRealTimeTitleHold'))) {
+    $useTitleLevelHol = true;
+    $titleLevelReqUrl = $this->recordLink()->getRequestUrl($holdingTitleHold);
+    $requestPlaceText = $this->transEsc('request_place_text');
+    $useTitleLevelHol = true;
+  }
+  ?>
+  <div class='holdings'>
+    <h3>Exemplare / Bindeeinheiten</h3>
+
+    <?php foreach ($holdings['holdings'] ?? [] as $holding): ?>
+
+      <h4>
+        <?php $locationName = $this->transEsc('location_' . $holding['location_external_name'], [], $holding['location_external_name']); ?>
+        <?php if (isset($holding['locationhref']) && $holding['locationhref']): ?>
+          <a href="<?=$holding['locationhref']?>" target="_blank"><?=$locationName?></a>
+        <?php else: ?>
+          <?=$locationName?>
+        <?php endif; ?>
+      </h4>
+
+      <?php
+      $hasCallnumber = empty(array_filter(array_column($holding['items'],
+        'callnumber')))
+        ? false
+        : true;
+      $hasCallnumber2 = empty(array_filter([
+        array_filter(array_column($holding['items'], 'callnumber_alt')),
+        array_filter(array_column($holding['items'], 'callnumber_tmp'))
+      ]))
+        ? false
+        : true;
+      $hasDescription = empty(array_filter(array_column($holding['items'],
+        'description')))
+        ? false
+        : true;
+      $hasItemNotes = empty(array_filter(array_column($holding['items'],
+        'item_notes')))
+        ? false
+        : true;
+      $hasPolicy = empty(array_filter(array_column($holding['items'], 'policy_code')))
+        ? false
+        : true;
+      $hasAvailability = empty(
+        array_filter(
+          array_column($holding['items'], 'availability'),
+          // AK: array_filter should remove the array value only when "availability"
+          // is "null", not if it is "0" (number zero) or "false" (boolean).
+          static function($ava) {return $ava !== null;}
+        )
+      )
+        ? false
+        : true;
+      ?>
+
+      <table class="table">
+        <tr>
+          <?php if ($hasCallnumber): ?>
+            <th><?=$this->transEsc("Call Number")?></th>
+          <?php endif; ?>
+          <?php if ($hasCallnumber2): ?>
+            <th><?=$this->transEsc("Call Number 2")?></th>
+          <?php endif; ?>
+          <?php if ($hasDescription): ?>
+            <th><?=$this->transEsc("Description")?></th>
+          <?php endif; ?>
+          <?php if ($hasItemNotes): ?>
+            <th><?=$this->transEsc("Item Notes")?></th>
+          <?php endif; ?>
+          <?php if ($hasPolicy): ?>
+            <th><?=$this->transEsc("Status")?></th>
+          <?php endif; ?>
+          <?php if ($hasAvailability): ?>
+            <th><?=$this->transEsc("Availability")?></th>
+          <?php endif; ?>
+          <th><?=$this->transEsc("hold_place")?></th>
+        </tr>
+
+        <?php foreach($holding['items'] as $item): ?>
+          <?php if (strlen($item['barcode'] ?? '') > 0): ?>
+            <?php
+              $check = $item['check'] ?? false;
+              $checkStorageRetrievalRequest = $item['checkStorageRetrievalRequest'] ?? false;
+              $checkILLRequest = $item['checkILLRequest'] ?? false;
+              $isRecall = $item['isRecall'] ?? false;
+            ?>
+            <tr vocab="http://schema.org/" typeof="Offer">
+              <?php if ($hasCallnumber): ?>
+                <td><?=$this->escapeHtml($item['callnumber'])?></td>
+              <?php endif; ?>
+              <?php if ($hasCallnumber2): ?>
+                <td>
+                  <?=implode(', ', array_filter([$item['callnumber_alt'],
+                  $item['callnumber_tmp']]))?>
+                </td>
+              <?php endif; ?>
+              <?php if ($hasDescription): ?>
+                <td><?=$this->escapeHtml($item['description'])?></td>
+              <?php endif; ?>
+              <?php if ($hasItemNotes): ?>
+                <td>
+                  <?php if(!empty($item['item_notes']) && count($item['item_notes'])>1): ?>
+                    <div class="item-notes">
+                      <ul>
+                        <?php foreach ($item['item_notes'] as $item_note): ?>
+                          <li><?=$this->escapeHtml($item_note) ?></li>
+                        <?php endforeach; ?>
+                      </ul>
+                    </div>
+                  <?php else: ?>
+                    <?=$this->escapeHtml($item['item_notes'][0]) ?>
+                  <?php endif;?>
+                </td>
+              <?php endif; ?>
+              <?php if ($hasPolicy): ?>
+                <td><?=$this->transEsc('ItemPolicies::'.$item['policy_code'])?></td>
+              <?php endif; ?>
+
+              <?php if ($hasAvailability): ?>
+                <td>
+                  <?php if ($item['availability'] ?? false): ?>
+                    <?php // Available message ?>
+                    <span class="text-success"><?=$this->transEsc("Available")?><link property="availability" href="http://schema.org/InStock" /></span>
+                  <?php else: ?>
+                    <?php // Unavailable messages ?>
+                    <span class="text-danger"><?=$this->transEsc($item['status'])?><link property="availability" href="http://schema.org/OutOfStock" /></span>
+                    <?php if ($item['returnDate'] ?? false): ?>&ndash; <span><?=$this->escapeHtml($item['returnDate'])?></span><?php endif; ?>
+                    <?php if ($item['duedate'] ?? false): ?>
+                      &ndash; <span><?=$this->transEsc("Due")?>: <?=$this->escapeHtml($item['duedate'])?></span>
+                    <?php endif; ?>
+                    <?php if (($item['requests_placed'] ?? 0) > 0): ?>
+                      &ndash; <span><?=$this->transEsc("Requested")?> (<?=$this->transEsc("NumberOf")?>: <?=$this->escapeHtml($item['requests_placed'])?>)</span>
+                    <?php endif; ?>
+                  <?php endif; ?>
+                </td>
+              <?php endif; ?>
+              <td>
+              <?php // Show account block message ?>
+              <?php if ($blocks): ?>
+                <?=$this->transEsc('account_block_no_holds')?>
+              <?php // Show location text ?>
+              <?php elseif ($item['locationtext']): ?>
+                <?=$this->transEsc($item['locationtext'])?>
+              <?php else: ?>
+                <?php // Show login button or warning about missing ILS account ?>
+                <?php if ($this->ils()->getHoldsMode() == 'driver' || $this->ils()->getTitleHoldsMode() == 'driver'): ?>
+                  <?php if ($account->loginEnabled() && $offlineMode != 'ils-offline'): ?>
+                    <?php if (!$user): ?>
+                      <?=$loginBtn?>
+                    <?php elseif (!$user->cat_username): ?>
+                      <span class="text-danger"><?=$this->transEsc('NoIlsAccountFound')?></span>
+                    <?php endif; ?>
+                  <?php endif; ?>
+                <?php endif; ?>
+
+                <?php // TODO: Check what happens when getHoldsMode or getTitleHoldsMode is not "driver" ?>
+                <?php // Show hold or recall buttons ?>
+                <?php if ($useTitleLevelHol): ?>
+                  <?php // Button for title level holds ?>
+                  <a class="placehold btn holIlsBtn" data-lightbox href="<?=$titleLevelReqUrl?>" title="<?=$requestPlaceText?>"><?=($isRecall) ? $recallThis : $placeAHold?></a>
+                <?php else: ?>
+                  <?php // Button for item level holds ?>
+                  <?php if ($item['link'] ?? false): ?>
+                    <?php // TODO: Show message if link is false! ?>
+                    <a class="<?=$check ? 'checkRequest disabled ' : ''?>placehold btn holIlsBtn" <?php if (!empty($item['linkLightbox'])): ?>data-lightbox <?php endif; ?>href="<?=$this->recordLink()->getRequestUrl($item['link'])?>"><i class="fa fa-spinner fa-pulse" aria-hidden="true"></i>&nbsp;<?=($check) ? $checkHold : (($isRecall) ? $recallThis : $placeAHold)?></a>
+                  <?php endif; ?>
+                  <?php if ($item['storageRetrievalRequestLink'] ?? false): ?>
+                    <a href="<?=$this->recordLink()->getRequestUrl($item['storageRetrievalRequestLink'])?>" data-lightbox class="btn holIlsBtn" title="<?=$this->transEsc('storage_retrieval_request_place_text')?>"><?=$this->transEsc('storage_retrieval_request_place_text')?></a>
+                  <?php endif; ?>
+                  <?php if ($item['ILLRequestLink'] ?? false): ?>
+                    <a href="<?=$this->recordLink()->getRequestUrl($item['ILLRequestLink'])?>" data-lightbox class="btn holIlsBtn" title="<?=$this->transEsc('ill_request_place_text')?>"><?=$this->transEsc('ill_request_place_text')?></a>
+                  <?php endif; ?>
+                  <?=$this->relais()->renderButtonIfActive($this->driver ?? null)?>
+                <?php endif; ?>
+
+              <?php endif; ?>
+
+                <?php
+                /*
+                // Schema.org
+                // TODO: Look at https://schema.org/Offer and add correct values.
+                <?php // Embed item structured data: library, barcode, call number ?>
+                <?php if ($item['location'] ?? false): ?>
+                  // TODO: "seller" should be the name of the library, not of the location.
+                  //       See https://schema.org/seller
+                  <meta property="seller" content="<?=$this->escapeHtmlAttr($item['location'])?>" />
+                <?php endif; ?>
+                <?php if ($item['barcode'] ?? false): ?>
+                  <meta property="serialNumber" content="<?=$this->escapeHtmlAttr($item['barcode'])?>" />
+                <?php endif; ?>
+                <?php if ($item['callnumber'] ?? false): ?>
+                  <meta property="sku" content="<?=$this->escapeHtmlAttr($item['callnumber'])?>" />
+                <?php endif; ?>
+                <?php // Declare that the item is to be borrowed, not for sale ?>
+                <link property="businessFunction" href="http://purl.org/goodrelations/v1#LeaseOut" />
+                <link property="itemOffered" href="#record" />
+                */
+                ?>
+              </td>
+            </tr>
+
+          <?php endif; ?>
+        <?php endforeach;?> 
+
+      </table>
+
+    <?php endforeach; ?>
+    <?php if (!empty($holdings['total']) && $paginator = $this->tab->getPaginator($holdings['total'], $holdings['page'], $holdings['itemLimit'])): ?>
+      <?php // AK: Fix pagination when the default tab is not set to Holdings by passing 'recordtab' and 'driver' to '[theme]\templates\Helpers\pagination.html'
+            //     TODO: Add to VuFind master code. ?>
+      <?=$this->paginationControl($paginator, 'Sliding', 'Helpers/pagination.phtml', ['page' => $holdings['page'], 'recordtab' => 'holdings', 'driver' => $this->driver])?>
+    <?php endif; ?>
+    <?php $history = $this->driver->getRealTimeHistory(); ?>
+    <?php if (is_array($history) && !empty($history)): ?>
+      <h3><?=$this->transEsc("Most Recent Received Issues")?></h3>
+      <table class="table table-striped">
+        <?php foreach ($history as $row): ?>
+          <tr><td><?=$this->escapeHtml($row['issue'])?></td></tr>
+        <?php endforeach; ?>
+      </table>
+    <?php endif; ?>
+  </div>
+<?php endif; ?>
+
+<?php // No holdings available?>
+<div class='holdings noHoldings'>
+<?php // AK: Check if there are no holdings (or URLs - uncomment below) ?>
+  <?php if (empty($holdings['holdings']) /*&& empty($urls)*/ && empty($holdings['summarizedHoldings'])): ?>
+    <?php // AK: If we have parent records, show a note and a link to a parent (if possible) ?>
+    <h3><?=$this->transEsc("holdingNote")?></h3>
+    <div class="padding-online-content">
+      <?php if ($this->tab->hasParents() && $parents = $this->tab->getParents()): ?>
+        <?=$this->transEsc('IntegratedInParentHolding')?><br />
+        <?php foreach ($parents as $key => $value):
+          $containerSource = $this->driver->getSourceIdentifier();
+        ?>
+          <?php if ($id = $value['id']) : ?>
+            <a href="<?=$this->recordLink()->getUrl("$containerSource|$id")?>">
+              <?=$this->escapeHtml($value['title'])?>
+            </a>
+          <?php else: ?>
+            <?=$this->escapeHtml($value['title'])?>
+          <?php endif; ?>
+          <?php if ($volNo = $value['volNo']): ?>
+            <?=' ('.$this->escapeHtml($value['volNo']).')'?> 
+          <?php endif; ?>
+          <br />
+        <?php endforeach; ?>
+      <?php elseif ($this->tab->hasChilds()): ?>
+        <h4><?=$this->transEsc('IntegratedInChildHolding')?></h4>
+        <a href="<?=$this->recordLink()->getTabUrl($this->driver, 'Parts')?>">
+          <?=$this->transEsc('child_records')?>
+        </a>
+      <?php else: ?>
+        <?php // AK: Show information that there are absolutely no holdings ?>
+        <h3><?=$this->transEsc('NoHoldingsExist')?></h3>
+      <?php endif; ?>
+    </div>
+  <?php endif; ?>
+</div>

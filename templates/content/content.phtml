@@ -1,0 +1,5 @@
+<?php
+// AK: Pass variables from the content controller to the page that should be shown
+$vars = (!empty($this->__vars)) ? $this->__vars : [];
+?>
+<?=$this->partial("content/$page.phtml", $vars) ?>

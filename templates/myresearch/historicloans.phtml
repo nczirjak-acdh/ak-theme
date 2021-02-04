@@ -1,0 +1,251 @@
+<?php
+  // Set up page title:
+  $this->headTitle($this->translate('Loan History'));
+
+  // Set up breadcrumbs:
+  $this->layout()->breadcrumbs = '<li><a href="' . $this->url('myresearch-home') . '">' . $this->transEsc('Your Account') . '</a></li> <li class="active">' . $this->transEsc('Loan History') . '</li>';
+
+  // AK: Check if the user wants to save his loans. This originally comes from the
+  //     getConfig method in Alma ILS driver. If the value is null, there is a
+  //     problem with the user table (e. g. the "save_loans" column doesn't exist).
+  $saveLoans = $this->functionConfig['save_loans'];
+?>
+
+<a class="search-filter-toggle visible-xs" href="#myresearch-sidebar" data-toggle="offcanvas" title="Expand Sidebar">
+  <?=$this->transEsc('Your Account') ?>
+</a>
+
+<div class="<?=$this->layoutClass('mainbody')?>">
+  <h2><?=$this->transEsc('Loan History')?></h2>
+  <?=$this->flashmessages()?>
+
+  <?=$this->context($this)->renderInContext('librarycards/selectcard.phtml', ['user' => $this->auth()->isLoggedIn()]); ?>
+
+  <?php // AK: Adding opt-in / opt-out texts and checkboxes functionality is working ?>
+  <?php if ($saveLoans !== null): ?>
+    <?php if ($saveLoans): ?>
+      <?=$this->transEsc('loanHistoryOptOutText')?>
+      <br /><br />
+      <form name="optOutLoanHistory" id="optOutLoanHistory" method="post">
+        <table id="tblOptOutLoanHistory">
+          <tr>
+            <td nowrap="nowrap" style="padding-right: 15px;"><input type="checkbox" id="chkConfirm" name="chkConfirm" /></td>
+            <td width="100%"><label for="chkConfirm" style="margin-bottom: 0px;"><?=$this->transEsc('loanHistoryOptOutCheckbox')?></label></td>
+            <td nowrap="nowrap"><input type="submit" class="btn btn-default" style="width: 55px;" name="submitOptOut" value="<?=$this->transEsc("OK")?>" /></td>
+          </tr>			
+        </table>
+      </form>
+      <br /><br />
+      <form name="exportLoanHistory" id="exportLoanHistory" method="post">
+        <div class="toolbar">
+          <input type="submit" class="btn btn-default" name="submitExportLoanHistory" value="<?=$this->transEsc("exportLoanHistory")?>" />
+        </div>
+        <br />
+      </form>
+    <?php else: ?>
+      <?=$this->transEsc('loanHistoryOptInText')?>
+      <br /><br />
+      <form name="optInLoanHistory" id="optInLoanHistory" method="post">
+        <table id="tblOptInLoanHistory">
+          <tr>
+            <td nowrap="nowrap" style="padding: 15px;"><input type="checkbox" id="chkConfirm" name="chkConfirm" /></td>
+            <td width="100%"><label for="chkConfirm" style="margin-bottom: 0px;"><?=$this->transEsc('loanHistoryOptInCheckbox')?></label></td>
+            <td nowrap="nowrap"><input type="submit" class="btn btn-default" style="width: 55px;" name="submitOptIn" value="<?=$this->transEsc("OK")?>" /></td>
+          </tr>			
+        </table>
+      </form>
+    <?php endif; ?>
+  <?php endif; ?>
+  <?php // AK: End adding opt-in / opt-out texts and checkboxes ?>
+
+  <?php if (!empty($this->transactions)): ?>
+    <nav class="search-header hidden-print">
+      <?php if ($this->paginator): ?>
+        <div class="search-stats">
+          <?php
+            $end = min(
+              $this->paginator->getAbsoluteItemNumber($this->paginator->getItemCountPerPage()),
+              $this->paginator->getTotalItemCount()
+            );
+            $transParams = [
+              '%%start%%' => $this->localizedNumber($this->paginator->getAbsoluteItemNumber(1)),
+              '%%end%%' => $this->localizedNumber($end),
+              '%%total%%' => $this->localizedNumber($this->paginator->getTotalItemCount())
+            ];
+          ?>
+          <?=$this->translate('showing_items_of_html', $transParams); ?>
+        </div>
+      <?php endif; ?>
+      <?php if ($this->sortList): ?>
+        <?=$this->context($this)->renderInContext('myresearch/controls/sort.phtml', ['sortList' => $this->sortList]); ?>
+      <?php endif; ?>
+    </nav>
+
+    <?php $i = 0; foreach ($this->transactions as $resource): ?>
+      <hr>
+      <?php // AK: Get source identifier ?>
+      <?php $source = $resource->getSourceIdentifier(); ?>
+      <?php $ilsDetails = $resource->getExtraDetail('ils_details'); ?>
+      <div id="record<?=$this->escapeHtmlAttr($resource->getUniqueId())?>" class="result">
+        <?php
+          $coverDetails = $this->record($resource)->getCoverDetails('checkedout', 'small', $this->recordLink()->getUrl($resource));
+          $cover = $coverDetails['html'];
+          $thumbnail = false;
+          $thumbnailAlignment = $this->record($resource)->getThumbnailAlignment('account');
+          if ($cover):
+            ob_start(); ?>
+            <div class="media-<?=$thumbnailAlignment ?> <?=$this->escapeHtmlAttr($coverDetails['size'])?>">
+              <?=$cover ?>
+            </div>
+            <?php $thumbnail = ob_get_contents();
+            ob_end_clean();
+          endif; ?>
+        <div class="media">
+          <?php if ($thumbnail && $thumbnailAlignment == 'left'): ?>
+            <?=$thumbnail ?>
+          <?php endif ?>
+          <div class="media-body">
+            <?php
+              // If this is a non-missing Solr record, we should display a link:
+              if (is_a($resource, 'VuFind\\RecordDriver\\SolrDefault') && !is_a($resource, 'VuFind\\RecordDriver\\Missing')) {
+                // AK: Getting whole title of resource
+                $title = (is_a($resource, 'AkSearch\\RecordDriver\\SolrMarc')) ? $resource->getWholeTitle() : $resource->getTitle();
+                $title = empty($title) ? $this->transEsc('Title not available') : $this->escapeHtml($title);
+                echo '<a href="' . $this->recordLink()->getUrl($resource) .
+                  '" class="title">' . $title . '</a>';
+              } elseif (isset($ilsDetails['title']) && !empty($ilsDetails['title'])){
+                // If the record is not available in Solr, perhaps the ILS driver sent us a title we can show...
+                echo $this->escapeHtml($ilsDetails['title']);
+              } else {
+                // Last resort -- indicate that no title could be found.
+                echo $this->transEsc('Title not available');
+              }
+            ?>
+            
+            <?php // AK: Space between title (and parent data if applicable) and the rest of the data ?>
+            <div class="spacer">
+              <?php // AK: Show parent data. Replaces "Published in" from original VuFind code. ?>
+              <?php foreach ($data = ($resource->getConsolidatedParents() ?? []) as $key => $value): ?>
+                <?php // AK: Get some values about the parent if there is one
+                  $pntVolNo = $value['volNo'] ?? null;
+                  $pntTitle = $value['title'] ?? null;
+                  $pntId    = $value['id'] ?? null;
+                  $isDepLit = strpos(strtolower($resource->getFormat()), 'dependentliterature') === false ? false : true;
+                ?>
+                <?php if ($pntTitle): ?>
+                  <span title="<?=((!$isDepLit && $pntVolNo) ? $this->transEsc('volume').' '.$this->escapeHtml($pntVolNo).' '.$this->transEsc('from') : $this->transEsc('In')) .': '.$this->escapeHtml($pntTitle)?>">
+                    <?=((!$isDepLit && $pntVolNo) ? $this->transEsc('volume').' <i>'.$this->escapeHtml($pntVolNo).'</i> '.$this->transEsc('from') : $this->transEsc('In')).': '?>
+                    <a href="<?=($pntId ? $this->recordLink()->getUrl("$source|$pntId") : $this->record($resource)->getLink('title', str_replace(['{{{{START_HILITE}}}}', '{{{{END_HILITE}}}}'], '', $pntTitle)))?>"><?=$this->highlight($pntTitle)?></a>
+                  </span>
+                  <br />
+                <?php endif; ?>
+              <?php endforeach; ?>
+            </div>
+
+            <?php // AK: Get all contributors ?>
+            <?php $summAuthors = $resource->getContributors(); if (!empty($summAuthors)): ?>
+              <span title="<?=implode('; ', $summAuthors)?>">
+                <b><?=$this->transEsc('participants')?>:</b>
+                <?php $authorCount = count($summAuthors); ?>
+                <?php foreach ($summAuthors as $i => $summAuthor): ?>              
+                  <a href="<?=$this->record($resource)->getLink('author', $this->highlight($summAuthor, null, true, false))?>"><?=$this->highlight($summAuthor)?></a><?=$i + 1 < $authorCount ? ';' : ''?>
+                <?php endforeach; ?>
+              </span>
+              <br />
+            <?php endif; ?>
+
+            <?php // AK: Get publication dates ?>
+            <?php if (!empty($pubYear = $ilsDetails['publication_year'])): ?>
+              <strong><?=$this->transEsc('Published')?>:</strong> <?=$this->escapeHtml($pubYear)?>
+              <br />
+            <?php elseif (!empty($pubYear = $resource->getPublicationDates())): ?>
+              <strong><?=$this->transEsc('Published')?>:</strong> <?=$this->escapeHtml(implode('; ', $pubYear))?>
+              <br />
+            <?php endif; ?>
+
+            <?php // AK: Get publishers ?>
+            <?php if (!empty($publishers = $resource->getPublishers())): ?>
+              <b><?=$this->transEsc('Publisher')?>:</b> <?=join('; ', $publishers)?>
+              <br />
+            <?php endif; ?>
+
+            <?php // AK: Added links ?>
+            <?php // We need to find out if we're supposed to display an OpenURL link ($openUrlActive),
+            // but even if we don't plan to display the link, we still want to get the $openUrl
+            // value for use in generating a COinS (Z3988) tag -- see bottom of file.
+            $openUrl = $this->openUrl($resource, 'results');
+            $openUrlActive = $openUrl->isActive();
+            $doi = $this->doi($resource, 'results');
+            $doiActive = $doi->isActive();
+            // Account for replace_other_urls setting
+            $urls = $this->record($resource)->getLinkDetails($openUrlActive);
+            if ($openUrlActive || $doiActive || !empty($urls)):
+            ?>
+              <?php if ($openUrlActive): ?>
+                <br/>
+                <?=$openUrl->renderTemplate()?>
+              <?php endif;?>
+              <?php if ($doiActive): ?>
+                <br/>
+                <?=$doi->renderTemplate()?>
+              <?php endif; ?>
+              <?php // AK: Custom URL display ?>
+              <?php if (!is_array($urls)) $urls = []; if(!$resource->isCollection()): ?>
+              <b><?=$this->transEsc('links')?>:</b>
+              <?php $urlCount = count($urls); foreach ($urls as $i => $current): ?>
+                <?php // TODO: AK: These are not only fulltext URLs! ?>
+                <a href="<?=$this->escapeHtmlAttr($this->proxyUrl($current['url']))?>" class="fulltext" target="new"><i class="fa fa-external-link" aria-hidden="true"></i> <?=($current['url'] == $current['desc']) ? $this->transEsc('Get full text') : $this->escapeHtml($current['desc'])?></a><?=$i + 1 < $urlCount ? ';' : ''?>
+                <?php endforeach; ?>
+              <?php endif; ?>
+            <?php endif; ?>
+
+            <?php // AK: Added spacer ?>
+            <div class="spacer">
+              <?php if (count($resource->getFormats()) > 0): ?>
+                <?=$this->record($resource)->getFormatList() ?>
+                <br/>
+              <?php endif; ?>
+            </div>
+
+            <?php // AK: Added spacer and alert-info box ?>
+            <div class="alert alert-info spacer">
+              <?php if (!empty($ilsDetails['institution_name']) && (empty($ilsDetails['borrowingLocation']) || $ilsDetails['institution_name'] != $ilsDetails['borrowingLocation'])): ?>
+                <strong><?=$this->transEsc('Library')?>:</strong> <?=$this->transEscWithPrefix('location_', $ilsDetails['institution_name'])?>
+                <br />
+              <?php endif; ?>
+              <?php if (!empty($ilsDetails['borrowingLocation'])): ?>
+                <strong><?=$this->transEsc('Borrowing Location')?>:</strong> <?=$this->transEscWithPrefix('location_', $ilsDetails['borrowingLocation'])?>
+                <br />
+              <?php endif; ?>
+              <?php if (!empty($ilsDetails['checkoutDate'])): ?>
+                <strong><?=$this->transEsc('Checkout Date')?>:</strong> <?=$this->escapeHtml($ilsDetails['checkoutDate'])?><?php if (isset($ilsDetails['checkoutTime'])): ?> <span class="checkout-time"><?=$this->escapeHtml($ilsDetails['checkoutTime'])?><?php endif; ?></span><br/>
+              <?php endif; ?>
+              <?php if (!empty($ilsDetails['dueDate'])): ?>
+                <strong><?=$this->transEsc('Due Date')?>:</strong> <?=$this->escapeHtml($ilsDetails['dueDate'])?><?php if (isset($ilsDetails['dueTime'])): ?> <span class="due-time"><?=$this->escapeHtml($ilsDetails['dueTime'])?></span><?php endif; ?><br/>
+              <?php endif; ?>
+              <?php if (!empty($ilsDetails['returnDate'])): ?>
+                <strong><?=$this->transEsc('Return Date')?>:</strong> <?=$this->escapeHtml($ilsDetails['returnDate'])?><?php if (isset($ilsDetails['returnTime'])): ?> <span class="return-time"><?=$this->escapeHtml($ilsDetails['returnTime'])?><?php endif; ?></span>
+              <?php endif; ?>
+            </div>
+
+            <?php if (isset($ilsDetails['message']) && !empty($ilsDetails['message'])): ?>
+              <div class="alert alert-info"><?=$this->transEsc($ilsDetails['message'])?></div>
+            <?php endif; ?>
+          </div>
+          <?php if ($thumbnail && $thumbnailAlignment == 'right'): ?>
+            <?=$thumbnail ?>
+          <?php endif ?>
+        </div>
+        <?=$resource->tryMethod('supportsCoinsOpenUrl')?'<span class="Z3988" title="' . $this->escapeHtmlAttr($resource->getCoinsOpenUrl()) . '"></span>':''?>
+      </div>
+    <?php endforeach; ?>
+    <hr>
+    <?=$this->paginator ? $this->paginationControl($this->paginator, 'Sliding', 'Helpers/pagination.phtml', ['params' => $this->params]) : ''?>
+  <?php else: ?>
+    <?=$this->transEsc('loan_history_empty')?>
+  <?php endif; ?>
+</div>
+
+<div class="<?=$this->layoutClass('sidebar')?>" id="myresearch-sidebar">
+  <?=$this->context($this)->renderInContext("myresearch/menu.phtml", ['active' => 'historicloans'])?>
+</div>
